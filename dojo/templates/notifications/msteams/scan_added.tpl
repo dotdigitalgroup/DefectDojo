@@ -46,3 +46,4 @@
         }
     ]
 }
+scan_added.tpl
