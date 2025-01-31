@@ -404,6 +404,13 @@ postgresql:
       runAsUser: 
     affinity: {}
     nodeSelector: {}
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
   volumePermissions:
     enabled: false
     # if using restricted SCC set runAsUser: "auto" and if running under anyuid SCC - runAsUser needs to match the line above
