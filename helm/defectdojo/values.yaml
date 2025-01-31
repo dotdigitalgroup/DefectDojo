@@ -233,7 +233,7 @@ django:
         memory: 256Mi
       limits:
         cpu: 2000m
-        memory: 1Gi
+        memory: 2Gi
     app_settings:
       processes: 2
       threads: 2
@@ -409,8 +409,8 @@ postgresql:
         cpu: 100m
         memory: 128Mi
       limits:
-        cpu: 500m
-        memory: 512Mi
+        cpu: 1
+        memory: 1Gi
   volumePermissions:
     enabled: false
     # if using restricted SCC set runAsUser: "auto" and if running under anyuid SCC - runAsUser needs to match the line above
