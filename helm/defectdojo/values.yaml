@@ -128,7 +128,7 @@ celery:
         memory: 128Mi
       limits:
         cpu: 2000m
-        memory: 256Mi
+        memory: 512Mi
     tolerations: []
   worker:
     annotations: {}
@@ -196,7 +196,9 @@ django:
     ingressClassName: ""
     activateTLS: true
     secretName: defectdojo-tls
-    annotations: {}
+    annotations: 
+      haproxy.router.openshift.io/timeout: 600s
+    
       # Restricts the type of ingress controller that can interact with our chart (nginx, traefik, ...)
       # kubernetes.io/ingress.class: nginx
       # Depending on the size and complexity of your scans, you might want to increase the default ingress timeouts if you see repeated 504 Gateway Timeouts
@@ -212,7 +214,7 @@ django:
         memory: 128Mi
       limits:
         cpu: 2000m
-        memory: 256Mi
+        memory: 512Mi
   nodeSelector: {}
   replicas: 1
   tolerations: []
@@ -231,7 +233,7 @@ django:
         memory: 256Mi
       limits:
         cpu: 2000m
-        memory: 512Mi
+        memory: 1Gi
     app_settings:
       processes: 2
       threads: 2
@@ -279,7 +281,11 @@ django:
   #   "File", "Socket", "CharDevice", "BlockDevice"
   # - `hostPath` - only for hostPath, file or directory from local host
   # @type: array<map>
-  extraVolumes: []
+  #extraVolumes:
+  #  - type: configMap
+  #    name: local_settings
+  #    path: /etc/nginx/nginx.conf
+  #    subPath: nginx.conf
 
   # This feature needs more preparation before can be enabled, please visit KUBERNETES.md#media-persistent-volume
   mediaPersistentVolume:
