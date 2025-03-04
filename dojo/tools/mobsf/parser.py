@@ -21,7 +21,7 @@ class MobSFParser:
     def get_findings(self, filename, test):
         tree = filename.read()
         try:
-            data = json.loads(str(tree, 'utf-8'))
+            data = json.loads(str(tree, "utf-8"))
         except:
             data = json.loads(tree)
         find_date = datetime.now()
@@ -73,8 +73,8 @@ class MobSFParser:
             if "urls" in data:
                 curl = ""
                 for url in data["urls"]:
-                    for curl in url["urls"]:
-                        curl = f"{curl}\n"
+                    for durl in url["urls"]:
+                        curl = f"{durl}\n"
 
                 if curl:
                     test_description = f"{test_description}\n**URL's:**\n {curl}\n"
@@ -95,7 +95,7 @@ class MobSFParser:
                         "title": details.get("name", ""),
                         "severity": self.getSeverityForPermission(details.get("status")),
                         "description": "**Permission Type:** " + details.get("name", "") + " (" + details.get("status", "") + ")\n\n**Description:** " + details.get("description", "") + "\n\n**Reason:** " + details.get("reason", ""),
-                        "file_path": None
+                        "file_path": None,
                     }
                     mobsf_findings.append(mobsf_item)
             else:
@@ -105,7 +105,7 @@ class MobSFParser:
                         "title": permission,
                         "severity": self.getSeverityForPermission(details.get("status", "")),
                         "description": "**Permission Type:** " + permission + "\n\n**Description:** " + details.get("description", ""),
-                        "file_path": None
+                        "file_path": None,
                     }
                     mobsf_findings.append(mobsf_item)
 
@@ -113,7 +113,7 @@ class MobSFParser:
         if "insecure_connections" in data:
             for details in data["insecure_connections"]:
                 insecure_urls = ""
-                for url in details.split(','):
+                for url in details.split(","):
                     insecure_urls = insecure_urls + url + "\n"
 
                 mobsf_item = {
@@ -121,7 +121,7 @@ class MobSFParser:
                     "title": "Insecure Connections",
                     "severity": "Low",
                     "description": insecure_urls,
-                    "file_path": None
+                    "file_path": None,
                 }
                 mobsf_findings.append(mobsf_item)
 
@@ -136,7 +136,7 @@ class MobSFParser:
                             "title": details[2],
                             "severity": details[0].title(),
                             "description": details[1] + "\n\n**Certificate Info:** " + certificate_info,
-                            "file_path": None
+                            "file_path": None,
                         }
                         mobsf_findings.append(mobsf_item)
                     elif len(details) == 2:
@@ -145,11 +145,9 @@ class MobSFParser:
                             "title": details[1],
                             "severity": details[0].title(),
                             "description": details[1] + "\n\n**Certificate Info:** " + certificate_info,
-                            "file_path": None
+                            "file_path": None,
                         }
                         mobsf_findings.append(mobsf_item)
-                    else:
-                        pass
 
         # Manifest Analysis
         if "manifest_analysis" in data:
@@ -161,7 +159,7 @@ class MobSFParser:
                             "title": details["title"],
                             "severity": details["severity"].title(),
                             "description": details["description"] + "\n\n " + details["name"],
-                            "file_path": None
+                            "file_path": None,
                         }
                         mobsf_findings.append(mobsf_item)
                 else:
@@ -171,7 +169,7 @@ class MobSFParser:
                             "title": details["title"],
                             "severity": details["stat"].title(),
                             "description": details["desc"] + "\n\n " + details["name"],
-                            "file_path": None
+                            "file_path": None,
                         }
                         mobsf_findings.append(mobsf_item)
 
@@ -186,7 +184,7 @@ class MobSFParser:
                             "title": details,
                             "severity": metadata["metadata"]["severity"].title(),
                             "description": metadata["metadata"]["description"],
-                            "file_path": None
+                            "file_path": None,
                         }
                         mobsf_findings.append(mobsf_item)
                 else:
@@ -198,7 +196,7 @@ class MobSFParser:
                                 "title": details,
                                 "severity": metadata["metadata"]["severity"].title(),
                                 "description": metadata["metadata"]["description"],
-                                "file_path": None
+                                "file_path": None,
                             }
                             mobsf_findings.append(mobsf_item)
 
@@ -207,13 +205,13 @@ class MobSFParser:
             if isinstance(data["binary_analysis"], list):
                 for details in data["binary_analysis"]:
                     for binary_analysis_type in details:
-                        if "name" != binary_analysis_type:
+                        if binary_analysis_type != "name":
                             mobsf_item = {
                                 "category": "Binary Analysis",
                                 "title": details[binary_analysis_type]["description"].split(".")[0],
                                 "severity": details[binary_analysis_type]["severity"].title(),
                                 "description": details[binary_analysis_type]["description"],
-                                "file_path": details["name"]
+                                "file_path": details["name"],
                             }
                             mobsf_findings.append(mobsf_item)
             elif data["binary_analysis"].get("findings"):
@@ -232,7 +230,7 @@ class MobSFParser:
                         "title": details["detailed_desc"],
                         "severity": details["severity"].title(),
                         "description": details["detailed_desc"],
-                        "file_path": None
+                        "file_path": None,
                     }
                     mobsf_findings.append(mobsf_item)
             else:
@@ -250,7 +248,7 @@ class MobSFParser:
                         "title": details["detailed_desc"],
                         "severity": details["severity"].title(),
                         "description": details["detailed_desc"],
-                        "file_path": None
+                        "file_path": None,
                     }
                     mobsf_findings.append(mobsf_item)
 
@@ -282,7 +280,7 @@ class MobSFParser:
                     "title": details["metadata"]["description"],
                     "severity": details["metadata"]["severity"].title(),
                     "description": "**API:** " + api + "\n\n**Description:** " + details["metadata"]["description"],
-                    "file_path": None
+                    "file_path": None,
                 }
                 mobsf_findings.append(mobsf_item)
 
@@ -294,7 +292,7 @@ class MobSFParser:
                     "title": details["title"],
                     "severity": details["stat"],
                     "description": details["desc"],
-                    "file_path": None
+                    "file_path": None,
                 }
                 mobsf_findings.append(mobsf_item)
 
@@ -305,7 +303,7 @@ class MobSFParser:
                 file_path = None
 
                 if "path" in finding:
-                    description = description + "\n\n**Files:**\n"
+                    description += "\n\n**Files:**\n"
                     for path in finding["path"]:
                         if file_path is None:
                             file_path = path
@@ -316,7 +314,7 @@ class MobSFParser:
                     "title": title,
                     "severity": finding["level"],
                     "description": description,
-                    "file_path": file_path
+                    "file_path": file_path,
                 }
 
                 mobsf_findings.append(mobsf_item)
@@ -327,7 +325,7 @@ class MobSFParser:
                     "title": finding["name"],
                     "severity": finding["severity"],
                     "description": finding["description"] + "\n" + "**apk_exploit_dict:** " + str(finding["apk_exploit_dict"]) + "\n" + "**line_number:** " + str(finding["line_number"]),
-                    "file_path": finding["file_object"]
+                    "file_path": finding["file_object"],
                 }
                 mobsf_findings.append(mobsf_item)
         for mobsf_finding in mobsf_findings:
@@ -337,7 +335,7 @@ class MobSFParser:
             file_path = None
             if mobsf_finding["category"]:
                 description += "**Category:** " + mobsf_finding["category"] + "\n\n"
-            description = description + html2text(mobsf_finding["description"])
+            description += html2text(mobsf_finding["description"])
             finding = Finding(
                 title=title,
                 cwe=919,  # Weaknesses in Mobile Applications
@@ -367,7 +365,8 @@ class MobSFParser:
         return list(dupes.values())
 
     def getSeverityForPermission(self, status):
-        """Convert status for permission detection to severity
+        """
+        Convert status for permission detection to severity
 
         In MobSF there is only 4 know values for permission,
          we map them as this:
@@ -376,10 +375,9 @@ class MobSFParser:
         signature         => Info (it's positive so... Info)
         signatureOrSystem => Info (it's positive so... Info)
         """
-        if "dangerous" == status:
+        if status == "dangerous":
             return "High"
-        else:
-            return "Info"
+        return "Info"
 
     # Criticality rating
     def getCriticalityRating(self, rating):

@@ -13,14 +13,14 @@ class RedHatSatelliteParser:
     def get_description_for_scan_types(self, scan_type):
         return "JSON Output of Red Hat Satellite."
 
-    def severity_mapping(self, input):
-        if input == "Critical":
+    def severity_mapping(self, severity_input):
+        if severity_input == "Critical":
             severity = "Critical"
-        elif input == "Important":
+        elif severity_input == "Important":
             severity = "High"
-        elif input == "Moderate":
+        elif severity_input == "Moderate":
             severity = "Medium"
-        elif input == "Low":
+        elif severity_input == "Low":
             severity = "Low"
         else:
             severity = "Low"
@@ -62,15 +62,18 @@ class RedHatSatelliteParser:
             description += "**hosts_applicable_count:** " + str(hosts_applicable_count) + "\n"
             description += "**installable:** " + str(installable) + "\n"
             if bugs != []:
-                description += "**bugs:** " + str(bugs) + "\n"
+                description += "**bugs:** "
+                for bug in bugs[:-1]:
+                    description += "[" + bug.get("bug_id") + "](" + bug.get("href") + ")" + ", "
+                description += "[" + bugs[-1].get("bug_id") + "](" + bugs[-1].get("href") + ")" + "\n"
             if module_streams != []:
                 description += "**module_streams:** " + str(module_streams) + "\n"
-            description += "**packages:** " + ', '.join(packages)
+            description += "**packages:** " + ", ".join(packages)
             find = Finding(
                 title=title,
                 test=test,
                 description=description,
-                severity=self.severity_mapping(input=severity),
+                severity=self.severity_mapping(severity_input=severity),
                 mitigation=solution,
                 dynamic_finding=True,
             )

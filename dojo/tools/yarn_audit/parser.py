@@ -22,16 +22,15 @@ class YarnAuditParser:
         if isinstance(lines, bytes):
             lines = lines.decode("utf-8")  # passes in unittests, but would fail in production
         if '"type"' in lines:
-            lines = lines.split('\n')
+            lines = lines.split("\n")
             tree = (json.loads(line) for line in lines if "{" in line)
             return self.get_items_yarn(tree, test)
-        elif '"value"' in lines:
-            lines = lines.split('\n')
+        if '"value"' in lines:
+            lines = lines.split("\n")
             tree = (json.loads(line) for line in lines if "{" in line)
             return self.get_items_yarn2(tree, test)
-        else:
-            tree = json.loads(lines)
-            return self.get_items_auditci(tree, test)
+        tree = json.loads(lines)
+        return self.get_items_auditci(tree, test)
 
     def get_items_yarn(self, tree, test):
         items = {}
@@ -57,8 +56,8 @@ class YarnAuditParser:
             childissue = child.get("Issue")
             childseverity = child.get("Severity")
             child_vuln_version = child.get("Vulnerable Versions")
-            child_tree_versions = ', '.join(set(child.get("Tree Versions")))
-            child_dependents = ', '.join(set(child.get("Dependents")))
+            child_tree_versions = ", ".join(set(child.get("Tree Versions")))
+            child_dependents = ", ".join(set(child.get("Dependents")))
             description += childissue + "\n"
             description += "**Vulnerable Versions:** " + child_vuln_version + "\n"
             description += "**Dependents:** " + child_dependents + "\n"
@@ -92,7 +91,7 @@ class YarnAuditParser:
             cvss = "**cvss:** " + str(tree.get("advisories").get(element).get("cvss"))
             found_by = "**found_by:** " + str(tree.get("advisories").get(element).get("found_by"))
             deleted = "**deleted:** " + str(tree.get("advisories").get(element).get("deleted"))
-            id = "**id:** " + str(tree.get("advisories").get(element).get("id"))
+            elem_id = "**id:** " + str(tree.get("advisories").get(element).get("id"))
             references = "**references:** " + str(tree.get("advisories").get(element).get("references"))
             created = "**created:** " + str(tree.get("advisories").get(element).get("created"))
             reported_by = "**reported_by:** " + str(tree.get("advisories").get(element).get("reported_by"))
@@ -110,7 +109,7 @@ class YarnAuditParser:
             description += cvss + "\n"
             description += found_by + "\n"
             description += deleted + "\n"
-            description += id + "\n"
+            description += elem_id + "\n"
             description += created + "\n"
             description += reported_by + "\n"
             description += title + "\n"

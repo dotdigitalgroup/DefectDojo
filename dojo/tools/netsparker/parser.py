@@ -3,6 +3,7 @@ import json
 
 import html2text
 from cvss import parser as cvss_parser
+from dateutil import parser as date_parser
 
 from dojo.models import Endpoint, Finding
 
@@ -24,14 +25,20 @@ class NetsparkerParser:
         except Exception:
             data = json.loads(tree)
         dupes = {}
-        if "UTC" in data["Generated"]:
-            scan_date = datetime.datetime.strptime(
-                data["Generated"].split(" ")[0], "%d/%m/%Y"
-            ).date()
-        else:
-            scan_date = datetime.datetime.strptime(
-                data["Generated"], "%d/%m/%Y %H:%M %p"
-            ).date()
+        try:
+            if "UTC" in data["Generated"]:
+                scan_date = datetime.datetime.strptime(
+                    data["Generated"].split(" ")[0], "%d/%m/%Y",
+                ).date()
+            else:
+                scan_date = datetime.datetime.strptime(
+                    data["Generated"], "%d/%m/%Y %H:%M %p",
+                ).date()
+        except ValueError:
+            try:
+                scan_date = date_parser.parse(data["Generated"])
+            except date_parser.ParserError:
+                scan_date = None
 
         for item in data["Vulnerabilities"]:
             title = item["Name"]
@@ -44,7 +51,7 @@ class NetsparkerParser:
             else:
                 cwe = None
             sev = item["Severity"]
-            if sev not in ["Info", "Low", "Medium", "High", "Critical"]:
+            if sev not in {"Info", "Low", "Medium", "High", "Critical"}:
                 sev = "Info"
             mitigation = html2text.html2text(item.get("RemedialProcedure", ""))
             references = html2text.html2text(item.get("RemedyReferences", ""))
@@ -79,13 +86,13 @@ class NetsparkerParser:
             if item["Classification"] is not None:
                 if item["Classification"].get("Cvss") is not None and item["Classification"].get("Cvss").get("Vector") is not None:
                     cvss_objects = cvss_parser.parse_cvss_from_text(
-                        item["Classification"]["Cvss"]["Vector"]
+                        item["Classification"]["Cvss"]["Vector"],
                     )
                     if len(cvss_objects) > 0:
                         finding.cvssv3 = cvss_objects[0].clean_vector()
                 elif item["Classification"].get("Cvss31") is not None and item["Classification"].get("Cvss31").get("Vector") is not None:
                     cvss_objects = cvss_parser.parse_cvss_from_text(
-                        item["Classification"]["Cvss31"]["Vector"]
+                        item["Classification"]["Cvss31"]["Vector"],
                     )
                     if len(cvss_objects) > 0:
                         finding.cvssv3 = cvss_objects[0].clean_vector()

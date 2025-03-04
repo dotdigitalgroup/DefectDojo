@@ -4,20 +4,19 @@ from dojo.models import Test
 from dojo.tools.jfrog_xray_api_summary_artifact.parser import (
     JFrogXrayApiSummaryArtifactParser,
 )
-
-from ..dojo_test_case import DojoTestCase
+from unittests.dojo_test_case import DojoTestCase, get_unit_tests_scans_path
 
 
 class TestJFrogXrayApiSummaryArtifactParser(DojoTestCase):
     def test_parse_file_with_no_vuln(self):
-        testfile = open("unittests/scans/jfrog_xray_api_summary_artifact/no_vuln.json")
+        testfile = open(get_unit_tests_scans_path("jfrog_xray_api_summary_artifact") / "no_vuln.json", encoding="utf-8")
         parser = JFrogXrayApiSummaryArtifactParser()
         findings = parser.get_findings(testfile, Test())
         testfile.close()
         self.assertEqual(0, len(findings))
 
     def test_parse_file_with_one_vuln(self):
-        testfile = open("unittests/scans/jfrog_xray_api_summary_artifact/one_vuln.json")
+        testfile = open(get_unit_tests_scans_path("jfrog_xray_api_summary_artifact") / "one_vuln.json", encoding="utf-8")
         parser = JFrogXrayApiSummaryArtifactParser()
         findings = parser.get_findings(testfile, Test())
         testfile.close()
@@ -35,7 +34,6 @@ class TestJFrogXrayApiSummaryArtifactParser(DojoTestCase):
         self.assertIsNone(item.mitigation)
         self.assertEqual("artifact1", item.component_name)
         self.assertIsNotNone(item.tags)
-        print(item.tags)
         self.assertEqual("1.0", item.component_version)
         self.assertEqual("artifact_path/artifact1/1.0/", item.file_path[:28])
         self.assertIsNone(item.severity_justification)
@@ -45,16 +43,16 @@ class TestJFrogXrayApiSummaryArtifactParser(DojoTestCase):
         result = hashlib.sha256()
         unique_id = (
             "eaab06c0a28618bfb65481bf31bce7d6dd3a15dac528297690111c202a1cd468"
-            + "3.12:openssl"
-            + "1.1.1k-r0"
-            + "XRAY-124116"
+            "3.12:openssl"
+            "1.1.1k-r0"
+            "XRAY-124116"
         )
         result.update(unique_id.encode())
         self.assertEqual(result.hexdigest(), item.unique_id_from_tool)
 
     def test_parse_file_with_many_vulns(self):
         testfile = open(
-            "unittests/scans/jfrog_xray_api_summary_artifact/many_vulns.json"
+            get_unit_tests_scans_path("jfrog_xray_api_summary_artifact") / "many_vulns.json", encoding="utf-8",
         )
         parser = JFrogXrayApiSummaryArtifactParser()
         findings = parser.get_findings(testfile, Test())
@@ -66,7 +64,7 @@ class TestJFrogXrayApiSummaryArtifactParser(DojoTestCase):
 
     def test_parse_file_with_malformed_cvssv3_score(self):
         testfile = open(
-            "unittests/scans/jfrog_xray_api_summary_artifact/malformed_cvssv3.json"
+            get_unit_tests_scans_path("jfrog_xray_api_summary_artifact") / "malformed_cvssv3.json", encoding="utf-8",
         )
         parser = JFrogXrayApiSummaryArtifactParser()
         findings = parser.get_findings(testfile, Test())

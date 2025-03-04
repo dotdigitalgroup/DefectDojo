@@ -20,11 +20,11 @@ class MeterianParser:
         report_json = json.load(report)
         security_reports = self.get_security_reports(report_json)
         scan_date = str(
-            datetime.fromisoformat(report_json["timestamp"]).date()
+            datetime.fromisoformat(report_json["timestamp"]).date(),
         )
         for single_security_report in security_reports:
             findings += self.do_get_findings(
-                single_security_report, scan_date, test
+                single_security_report, scan_date, test,
             )
 
         return findings
@@ -73,7 +73,7 @@ class MeterianParser:
                 )
 
                 if "cve" in advisory:
-                    if "N/A" != advisory["cve"]:
+                    if advisory["cve"] != "N/A":
                         finding.unsaved_vulnerability_ids = [advisory["cve"]]
 
                 if "cwe" in advisory:
@@ -132,15 +132,14 @@ class MeterianParser:
                 severity = "High"
             else:
                 severity = "Critical"
+        elif (
+            advisory["severity"] == "SUGGEST"
+            or advisory["severity"] == "NA"
+            or advisory["severity"] == "NONE"
+        ):
+            severity = "Info"
         else:
-            if (
-                advisory["severity"] == "SUGGEST"
-                or advisory["severity"] == "NA"
-                or advisory["severity"] == "NONE"
-            ):
-                severity = "Info"
-            else:
-                severity = advisory["severity"].title()
+            severity = advisory["severity"].title()
 
         return severity
 

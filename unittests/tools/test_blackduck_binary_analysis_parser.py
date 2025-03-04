@@ -1,20 +1,18 @@
-from pathlib import Path
 
 from dojo.models import Test
 from dojo.tools.blackduck_binary_analysis.parser import BlackduckBinaryAnalysisParser
-
-from ..dojo_test_case import DojoTestCase, get_unit_tests_path
+from unittests.dojo_test_case import DojoTestCase, get_unit_tests_scans_path
 
 
 class TestBlackduckBinaryAnalysisParser(DojoTestCase):
     def test_parse_no_vulns(self):
-        testfile = Path(get_unit_tests_path() + "/scans/blackduck_binary_analysis/no_vuln.csv")
+        testfile = get_unit_tests_scans_path("blackduck_binary_analysis") / "no_vuln.csv"
         parser = BlackduckBinaryAnalysisParser()
         findings = parser.get_findings(testfile, Test())
         self.assertEqual(0, len(findings))
 
     def test_parse_one_vuln(self):
-        testfile = Path(get_unit_tests_path() + "/scans/blackduck_binary_analysis/one_vuln.csv")
+        testfile = get_unit_tests_scans_path("blackduck_binary_analysis") / "one_vuln.csv"
         parser = BlackduckBinaryAnalysisParser()
         findings = parser.get_findings(testfile, Test())
         self.assertEqual(1, len(findings))
@@ -22,7 +20,7 @@ class TestBlackduckBinaryAnalysisParser(DojoTestCase):
             self.assertIsNotNone(finding.title)
             self.assertEqual(
                 "instrument.dll: zlib 1.2.13 Vulnerable to CVE-2023-45853",
-                finding.title
+                finding.title,
             )
 
             self.assertIsNotNone(finding.description)
@@ -38,7 +36,7 @@ class TestBlackduckBinaryAnalysisParser(DojoTestCase):
             self.assertIsNotNone(finding.file_path)
             self.assertEqual(
                 "JRE.msi:JRE.msi-30276-90876123.cab:instrument.dll",
-                finding.file_path
+                finding.file_path,
             )
 
             self.assertIsNotNone(finding.vuln_id_from_tool)
@@ -47,7 +45,7 @@ class TestBlackduckBinaryAnalysisParser(DojoTestCase):
             self.assertIsNotNone(finding.unique_id_from_tool)
 
     def test_parse_many_vulns(self):
-        testfile = Path(get_unit_tests_path() + "/scans/blackduck_binary_analysis/many_vulns.csv")
+        testfile = get_unit_tests_scans_path("blackduck_binary_analysis") / "many_vulns.csv"
         parser = BlackduckBinaryAnalysisParser()
         findings = parser.get_findings(testfile, Test())
         self.assertEqual(5, len(findings))

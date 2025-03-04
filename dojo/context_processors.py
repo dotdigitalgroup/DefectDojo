@@ -1,3 +1,5 @@
+import contextlib
+
 # import the settings file
 from django.conf import settings
 
@@ -25,6 +27,7 @@ def globalize_vars(request):
         "SAML2_LOGOUT_URL": settings.SAML2_LOGOUT_URL,
         "DOCUMENTATION_URL": settings.DOCUMENTATION_URL,
         "API_TOKENS_ENABLED": settings.API_TOKENS_ENABLED,
+        "API_TOKEN_AUTH_ENDPOINT_ENABLED": settings.API_TOKEN_AUTH_ENDPOINT_ENABLED,
     }
 
 
@@ -46,12 +49,10 @@ def bind_alert_count(request):
 def bind_announcement(request):
     from dojo.models import UserAnnouncement
 
-    try:
+    with contextlib.suppress(Exception):  # TODO: this should be replaced with more meaningful exception
         if request.user.is_authenticated:
             user_announcement = UserAnnouncement.objects.select_related(
-                "announcement"
+                "announcement",
             ).get(user=request.user)
             return {"announcement": user_announcement.announcement}
-        return {}
-    except Exception:
-        return {}
+    return {}

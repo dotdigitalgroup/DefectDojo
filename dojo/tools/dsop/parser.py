@@ -21,11 +21,11 @@ class DsopParser:
         self.__parse_disa(test, items, book["OpenSCAP - DISA Compliance"])
         self.__parse_oval(test, items, book["OpenSCAP - OVAL Results"])
         self.__parse_twistlock(
-            test, items, book["Twistlock Vulnerability Results"]
+            test, items, book["Twistlock Vulnerability Results"],
         )
         self.__parse_anchore(test, items, book["Anchore CVE Results"])
         self.__parse_anchore_compliance(
-            test, items, book["Anchore Compliance Results"]
+            test, items, book["Anchore Compliance Results"],
         )
         return items
 
@@ -39,14 +39,11 @@ class DsopParser:
                 for i in range(len(row)):
                     headers[row[i]] = i
             else:
-                if row[headers["result"]] not in ("fail", "notchecked"):
+                if row[headers["result"]] not in {"fail", "notchecked"}:
                     continue
                 title = row[headers["title"]]
                 unique_id = row[headers["ruleid"]]
-                if row[headers["severity"]] == "unknown":
-                    severity = "Info"
-                else:
-                    severity = row[headers["severity"]].title()
+                severity = "Info" if row[headers["severity"]] == "unknown" else row[headers["severity"]].title()
                 references = row[headers["refs"]]
                 description = row[headers["desc"]]
                 impact = row[headers["rationale"]]
@@ -68,7 +65,7 @@ class DsopParser:
 
                 if row[headers["identifiers"]]:
                     finding.unsaved_vulnerability_ids = [
-                        row[headers["identifiers"]]
+                        row[headers["identifiers"]],
                     ]
 
                 finding.unsaved_tags = tags
@@ -140,7 +137,7 @@ class DsopParser:
                 component_name = row[headers["packageName"]]
                 component_version = row[headers["packageVersion"]]
                 title = "{}: {} - {}".format(
-                    row[headers["cve"]], component_name, component_version
+                    row[headers["cve"]], component_name, component_version,
                 )
                 if row[headers["severity"]] == "important":
                     severity = "High"
@@ -227,7 +224,6 @@ class DsopParser:
                     severity = "Critical"
                 else:
                     severity = "Info"
-                severity = severity
                 mitigation = "To be investigated"
                 description = "Gate: {} (Trigger: {}): {}".format(
                     row[headers["gate"]],
@@ -235,7 +231,7 @@ class DsopParser:
                     row[headers["check_output"]],
                 )
                 title = "{}: {}".format(
-                    row[headers["policy_id"]], row[headers["trigger_id"]]
+                    row[headers["policy_id"]], row[headers["trigger_id"]],
                 )
                 tags = "anchore_compliance"
 

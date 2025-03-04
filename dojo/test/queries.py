@@ -23,20 +23,20 @@ def get_authorized_tests(permission, product=None):
 
     roles = get_roles_for_permission(permission)
     authorized_product_type_roles = Product_Type_Member.objects.filter(
-        product_type=OuterRef('engagement__product__prod_type_id'),
+        product_type=OuterRef("engagement__product__prod_type_id"),
         user=user,
         role__in=roles)
     authorized_product_roles = Product_Member.objects.filter(
-        product=OuterRef('engagement__product_id'),
+        product=OuterRef("engagement__product_id"),
         user=user,
         role__in=roles)
 
     authorized_product_type_groups = Product_Type_Group.objects.filter(
-        product_type=OuterRef('engagement__product__prod_type_id'),
+        product_type=OuterRef("engagement__product__prod_type_id"),
         group__users=user,
         role__in=roles)
     authorized_product_groups = Product_Group.objects.filter(
-        product=OuterRef('engagement__product_id'),
+        product=OuterRef("engagement__product_id"),
         group__users=user,
         role__in=roles)
 
@@ -46,13 +46,11 @@ def get_authorized_tests(permission, product=None):
         engagement__product__prod_type__authorized_group=Exists(authorized_product_type_groups),
         engagement__product__authorized_group=Exists(authorized_product_groups))
 
-    tests = tests.filter(
+    return tests.filter(
         Q(engagement__product__prod_type__member=True)
         | Q(engagement__product__member=True)
         | Q(engagement__product__prod_type__authorized_group=True)
         | Q(engagement__product__authorized_group=True))
-
-    return tests
 
 
 def get_authorized_test_imports(permission):
@@ -69,19 +67,19 @@ def get_authorized_test_imports(permission):
 
     roles = get_roles_for_permission(permission)
     authorized_product_type_roles = Product_Type_Member.objects.filter(
-        product_type=OuterRef('test__engagement__product__prod_type_id'),
+        product_type=OuterRef("test__engagement__product__prod_type_id"),
         user=user,
         role__in=roles)
     authorized_product_roles = Product_Member.objects.filter(
-        product=OuterRef('test__engagement__product_id'),
+        product=OuterRef("test__engagement__product_id"),
         user=user,
         role__in=roles)
     authorized_product_type_groups = Product_Type_Group.objects.filter(
-        product_type=OuterRef('test__engagement__product__prod_type_id'),
+        product_type=OuterRef("test__engagement__product__prod_type_id"),
         group__users=user,
         role__in=roles)
     authorized_product_groups = Product_Group.objects.filter(
-        product=OuterRef('test__engagement__product_id'),
+        product=OuterRef("test__engagement__product_id"),
         group__users=user,
         role__in=roles)
     test_imports = Test_Import.objects.annotate(
@@ -89,10 +87,8 @@ def get_authorized_test_imports(permission):
         test__engagement__product__member=Exists(authorized_product_roles),
         test__engagement__product__prod_type__authorized_group=Exists(authorized_product_type_groups),
         test__engagement__product__authorized_group=Exists(authorized_product_groups)).order_by("id")
-    test_imports = test_imports.filter(
+    return test_imports.filter(
         Q(test__engagement__product__prod_type__member=True)
         | Q(test__engagement__product__member=True)
         | Q(test__engagement__product__prod_type__authorized_group=True)
         | Q(test__engagement__product__authorized_group=True))
-
-    return test_imports

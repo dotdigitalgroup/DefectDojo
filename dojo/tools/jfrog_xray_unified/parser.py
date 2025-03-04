@@ -5,6 +5,7 @@ from dojo.models import Finding
 
 
 class JFrogXrayUnifiedParser:
+
     """JFrog Xray JSON reports"""
 
     def get_scan_types(self):
@@ -40,7 +41,7 @@ def get_item(vulnerability, test):
     highestCvssV3Index = 0
     highestCvssV3Score = 0
 
-    for thisCveIndex in range(0, len(vulnerability["cves"]) - 1):
+    for thisCveIndex in range(len(vulnerability["cves"]) - 1):
         # not all cves have cvssv3 scores, so skip these. If no v3 scores,
         # we'll default to index 0
         if "cvss_v3_score" in vulnerability["cves"][thisCveIndex]:
@@ -53,10 +54,7 @@ def get_item(vulnerability, test):
 
     # Following the CVSS Scoring per https://nvd.nist.gov/vuln-metrics/cvss
     if "severity" in vulnerability:
-        if vulnerability["severity"] == "Unknown":
-            severity = "Info"
-        else:
-            severity = vulnerability["severity"].title()
+        severity = "Info" if vulnerability["severity"] == "Unknown" else vulnerability["severity"].title()
     # TODO: Needs UNKNOWN new status in the model.
     else:
         severity = "Info"
@@ -86,7 +84,7 @@ def get_item(vulnerability, test):
         and len(vulnerability["fixed_versions"]) > 0
     ):
         mitigation = "Versions containing a fix:\n"
-        mitigation = mitigation + "\n".join(vulnerability["fixed_versions"])
+        mitigation += "\n".join(vulnerability["fixed_versions"])
 
     if (
         "external_advisory_source" in vulnerability
@@ -106,7 +104,7 @@ def get_item(vulnerability, test):
     references = "\n".join(vulnerability["references"])
 
     scan_time = datetime.strptime(
-        vulnerability["artifact_scan_time"], "%Y-%m-%dT%H:%M:%S%z"
+        vulnerability["artifact_scan_time"], "%Y-%m-%dT%H:%M:%S%z",
     )
 
     # component has several parts separated by colons. Last part is the

@@ -7,7 +7,7 @@ LOGGER = logging.getLogger(__name__)
 
 class Cyclonedxhelper:
     def _get_cvssv3(self, raw_vector):
-        if raw_vector is None or "" == raw_vector:
+        if raw_vector is None or raw_vector == "":
             return None
         if not raw_vector.startswith("CVSS:3"):
             raw_vector = "CVSS:3.1/" + raw_vector
@@ -15,7 +15,7 @@ class Cyclonedxhelper:
             return CVSS3(raw_vector)
         except BaseException:
             LOGGER.exception(
-                f"error while parsing vector CVSS v3 {raw_vector}"
+                f"error while parsing vector CVSS v3 {raw_vector}",
             )
             return None
 
@@ -34,6 +34,6 @@ class Cyclonedxhelper:
         severity = severity.capitalize()
         if severity is None:
             severity = "Medium"
-        elif "Unknown" == severity or "None" == severity:
+        elif severity == "Unknown" or severity == "None":
             severity = "Info"
         return severity

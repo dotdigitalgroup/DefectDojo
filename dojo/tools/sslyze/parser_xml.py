@@ -7,7 +7,7 @@ from dojo.models import Endpoint, Finding
 
 __author__ = "dr3dd589"
 
-# FIXME discuss this list as maintenance subject
+# TODO: discuss this list as maintenance subject
 WEAK_CIPHER_LIST = [
     "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
     "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
@@ -77,8 +77,8 @@ class SSLyzeXMLParser:
                             title = element.attrib["title"] + " | " + host
                             description = (
                                 "**heartbleed** : Vulnerable"
-                                + "\n\n"
-                                + "**title** : "
+                                "\n\n"
+                                "**title** : "
                                 + element.attrib["title"]
                             )
                 if element.tag == "openssl_ccs":
@@ -91,8 +91,8 @@ class SSLyzeXMLParser:
                             title = element.attrib["title"] + " | " + host
                             description = (
                                 "**openssl_ccs** : Vulnerable"
-                                + "\n\n"
-                                + "**title** : "
+                                "\n\n"
+                                "**title** : "
                                 + element.attrib["title"]
                             )
                 if element.tag == "reneg":
@@ -102,8 +102,8 @@ class SSLyzeXMLParser:
                             title = element.attrib["title"] + " | " + host
                             description = (
                                 "**Session Renegotiation** : Vulnerable"
-                                + "\n\n"
-                                + "**title** : "
+                                "\n\n"
+                                "**title** : "
                                 + element.attrib["title"]
                             )
                 if (
@@ -120,7 +120,7 @@ class SSLyzeXMLParser:
                                 if cipher.attrib["name"] in WEAK_CIPHER_LIST:
                                     if cipher.attrib["name"] not in weak_cipher[element.tag]:
                                         weak_cipher[element.tag].append(
-                                            cipher.attrib["name"]
+                                            cipher.attrib["name"],
                                         )
                     if len(weak_cipher[element.tag]) > 0:
                         title = (
@@ -135,7 +135,7 @@ class SSLyzeXMLParser:
                         )
                 if title and description is not None:
                     dupe_key = hashlib.md5(
-                        str(description + title).encode("utf-8")
+                        str(description + title).encode("utf-8"),
                     ).hexdigest()
                     if dupe_key in dupes:
                         finding = dupes[dupe_key]
@@ -158,7 +158,7 @@ class SSLyzeXMLParser:
                         if host is not None:
                             finding.unsaved_endpoints.append(
                                 Endpoint(
-                                    host=host, port=port, protocol=protocol
-                                )
+                                    host=host, port=port, protocol=protocol,
+                                ),
                             )
-        return dupes.values()
+        return list(dupes.values())

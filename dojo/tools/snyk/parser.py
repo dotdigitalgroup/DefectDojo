@@ -6,6 +6,61 @@ from dojo.models import Finding
 
 
 class SnykParser:
+
+    def get_fields(self) -> list[str]:
+        """
+        Return the list of fields used in the Snyk Parser.
+
+        Fields:
+        - title: Made from vulnerability and vulnerability title.
+        - severity: Set to cvssScore from Snyk Scanner and translated into DefectDojo format.
+        - severity_justification: Made from combining data about the cvssScore.
+        - description: Made from details on vulnerability.
+        - mitigation: Made from combining data about the cvssScore.
+        - component_name: Set to vulnerability packageName from Snyk Parser.
+        - component_version: Set to vulnerability version from Snyk Parser.
+        - impact: Set to value of severity.
+        - file_path: Made by Snyk parser while removing versions.
+        - vuln_id_from_tool: Set to vulnerability id from Snyk Scanner.
+        - cvssv3: Set to cvssv3 from Scanner if present.
+        - epss_score: Set to epss_score from Scanner if "epssDetails" are present.
+        - epss_percentile: Set to epss_percentile from Scanner if "epssDetails" are present.
+        - cwe: Set to cwe from scanner if present.
+        """
+        return [
+            "title",
+            "severity",
+            "severity_justification",
+            "description",
+            "mitigation",
+            "component_name"
+            "component_version"
+            "impact"
+            "file_path",
+            "vuln_id_from_tool",
+            "cvssv3",
+            "epss_score",
+            "epss_percentile",
+            "cwe",
+        ]
+
+    def get_dedupe_fields(self) -> list[str]:
+        """
+        Return the list of fields used for deduplication in the Snyk Parser.
+
+        Fields:
+        - vuln_id_from_tool: Set to vulnerability id from Snyk Scanner.
+        - file_path: Made by Snyk parser while removing versions.
+        - component_name: Set to vulnerability packageName from Snyk Parser.
+        - component_version: Set to vulnerability version from Snyk Parser.
+        """
+        return [
+            "vuln_id_from_tool",
+            "file_path",
+            "component_name",
+            "component_version",
+        ]
+
     def get_scan_types(self):
         return ["Snyk Scan"]
 
@@ -23,8 +78,7 @@ class SnykParser:
             for moduleTree in reportTree:
                 temp += self.process_tree(moduleTree, test)
             return temp
-        else:
-            return self.process_tree(reportTree, test)
+        return self.process_tree(reportTree, test)
 
     def process_tree(self, tree, test):
         return list(self.get_items(tree, test)) if tree else []
@@ -51,7 +105,7 @@ class SnykParser:
             vulnerabilityTree = tree["vulnerabilities"]
             for node in vulnerabilityTree:
                 item = self.get_item(
-                    node, test, target_file=target_file, upgrades=upgrades
+                    node, test, target_file=target_file, upgrades=upgrades,
                 )
                 items[iterator] = item
                 iterator += 1
@@ -59,7 +113,7 @@ class SnykParser:
             results = tree["runs"][0]["results"]
             for node in results:
                 item = self.get_code_item(
-                    node, test
+                    node, test,
                 )
                 items[iterator] = item
                 iterator += 1
@@ -70,7 +124,7 @@ class SnykParser:
         # or an array for multiple versions depending on the language.
         if isinstance(vulnerability["semver"]["vulnerable"], list):
             vulnerable_versions = ", ".join(
-                vulnerability["semver"]["vulnerable"]
+                vulnerability["semver"]["vulnerable"],
             )
         else:
             vulnerable_versions = vulnerability["semver"]["vulnerable"]
@@ -172,7 +226,7 @@ class SnykParser:
         references = ""
         if "id" in vulnerability:
             references = "**SNYK ID**: https://app.snyk.io/vuln/{}\n\n".format(
-                vulnerability["id"]
+                vulnerability["id"],
             )
 
         if cwe_references:
@@ -211,7 +265,7 @@ class SnykParser:
                     for lib in tertiary_upgrade_list
                 ):
                     finding.unsaved_tags.append(
-                        f"upgrade_to:{upgraded_pack}"
+                        f"upgrade_to:{upgraded_pack}",
                     )
                     finding.mitigation += f"\nUpgrade from {current_pack_version} to {upgraded_pack} to fix this issue, as well as updating the following:\n - "
                     finding.mitigation += "\n - ".join(tertiary_upgrade_list)
@@ -238,7 +292,7 @@ class SnykParser:
         else:
             severity = "Critical"
         # create the finding object
-        finding = Finding(
+        return Finding(
             title=ruleId + "_" + locations_uri,
             test=test,
             severity=severity,
@@ -259,4 +313,3 @@ class SnykParser:
             static_finding=True,
             dynamic_finding=False,
         )
-        return finding

@@ -20,7 +20,7 @@ class TrustwaveParser:
         if isinstance(content, bytes):
             content = content.decode("utf-8")
         reader = csv.DictReader(
-            io.StringIO(content), delimiter=",", quotechar='"'
+            io.StringIO(content), delimiter=",", quotechar='"',
         )
 
         severity_mapping = {
@@ -41,11 +41,9 @@ class TrustwaveParser:
             if host is None or host == "":
                 host = row.get("IP")
             finding.unsaved_endpoints = [Endpoint(host=host)]
-            if row.get("Port") is not None and not "" == row.get("Port"):
+            if row.get("Port") is not None and row.get("Port") != "":
                 finding.unsaved_endpoints[0].port = int(row["Port"])
-            if row.get("Protocol") is not None and not "" == row.get(
-                "Protocol"
-            ):
+            if row.get("Protocol") is not None and row.get("Protocol") != "":
                 finding.unsaved_endpoints[0].protocol = row["Protocol"]
             finding.title = row["Vulnerability Name"]
             finding.description = row["Description"]
@@ -53,14 +51,11 @@ class TrustwaveParser:
             finding.mitigation = row.get("Remediation")
 
             # manage severity
-            if row["Severity"] in severity_mapping:
-                finding.severity = severity_mapping[row["Severity"]]
-            else:
-                finding.severity = "Low"
+            finding.severity = severity_mapping.get(row["Severity"], "Low")
             finding.unsaved_vulnerability_ids = [row.get("CVE")]
 
             dupes_key = hashlib.sha256(
-                f"{finding.severity}|{finding.title}|{finding.description}".encode()
+                f"{finding.severity}|{finding.title}|{finding.description}".encode(),
             ).hexdigest()
 
             if dupes_key in dupes:

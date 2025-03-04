@@ -1,4 +1,8 @@
-from dojo.models import Endpoint, Finding
+import base64
+
+from django.core.files.base import ContentFile
+
+from dojo.models import Endpoint, FileUpload, Finding
 from dojo.tools.parser_test import ParserTest
 
 
@@ -8,7 +12,7 @@ class GenericJSONParser:
     def _get_test_json(self, data):
         test_internal = ParserTest(
             name=data.get("name", self.ID),
-            type=data.get("type", self.ID),
+            parser_type=data.get("type", self.ID),
             version=data.get("version"),
         )
         test_internal.findings = []
@@ -41,6 +45,8 @@ class GenericJSONParser:
                 "date",
                 "cwe",
                 "cve",
+                "epss_score",
+                "epss_percentile",
                 "cvssv3",
                 "cvssv3_score",
                 "mitigation",
@@ -103,13 +109,18 @@ class GenericJSONParser:
                         endpoint = Endpoint(**endpoint_item)
                     finding.unsaved_endpoints.append(endpoint)
             if unsaved_files:
+                for unsaved_file in unsaved_files:
+                    data = base64.b64decode(unsaved_file.get("data"))
+                    title = unsaved_file.get("title", "<No title>")
+                    FileUpload(title=title, file=ContentFile(data)).clean()
+
                 finding.unsaved_files = unsaved_files
             if finding.cve:
                 finding.unsaved_vulnerability_ids = [finding.cve]
             if unsaved_vulnerability_ids:
                 if finding.unsaved_vulnerability_ids:
                     finding.unsaved_vulnerability_ids.append(
-                        unsaved_vulnerability_ids
+                        unsaved_vulnerability_ids,
                     )
                 else:
                     finding.unsaved_vulnerability_ids = (

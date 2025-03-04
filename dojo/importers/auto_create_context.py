@@ -23,6 +23,7 @@ deduplicationLogger = logging.getLogger("dojo.specific-loggers.deduplication")
 
 
 class AutoCreateContextManager:
+
     """
     Management of safely fetching and creating resources used in the import
     and reimport processes. Resources managed by this class are:
@@ -31,6 +32,7 @@ class AutoCreateContextManager:
     - Engagements
     - Tests
     """
+
     """
     ===================================
     ----------- Validators ------------
@@ -49,7 +51,7 @@ class AutoCreateContextManager:
         test such that passing the whole object, or just the ID
         will suffice
         """
-        if object_id := data.get(key, None):
+        if object_id := data.get(key):
             # Convert to just the ID if the whole object as passed
             if isinstance(object_id, object_type):
                 object_id = object_id.id
@@ -111,7 +113,7 @@ class AutoCreateContextManager:
     """
     def get_target_product_type_if_exists(
         self,
-        product_type_name: str = None,
+        product_type_name: str | None = None,
         **kwargs: dict,
     ) -> Product_Type | None:
         """
@@ -126,8 +128,8 @@ class AutoCreateContextManager:
 
     def get_target_product_if_exists(
         self,
-        product_name: str = None,
-        product_type_name: str = None,
+        product_name: str | None = None,
+        product_type_name: str | None = None,
         **kwargs: dict,
     ) -> Product | None:
         """
@@ -166,7 +168,7 @@ class AutoCreateContextManager:
     def get_target_engagement_if_exists(
         self,
         engagement_id: int = 0,
-        engagement_name: str = None,
+        engagement_name: str | None = None,
         product: Product = None,
         **kwargs: dict,
     ) -> Engagement | None:
@@ -178,7 +180,7 @@ class AutoCreateContextManager:
         If a match is not found, and a product is not supplied, return None
         """
         if engagement := get_object_or_none(Engagement, pk=engagement_id):
-            logger.debug('Using existing engagement by id: %s', engagement_id)
+            logger.debug("Using existing engagement by id: %s", engagement_id)
             return engagement
         # if there's no product, then for sure there's no engagement either
         if product is None:
@@ -189,8 +191,8 @@ class AutoCreateContextManager:
     def get_target_test_if_exists(
         self,
         test_id: int = 0,
-        test_title: str = None,
-        scan_type: str = None,
+        test_title: str | None = None,
+        scan_type: str | None = None,
         engagement: Engagement = None,
         **kwargs: dict,
     ) -> Test | None:
@@ -200,7 +202,7 @@ class AutoCreateContextManager:
         the provided scan_type and test_title.
         """
         if test := get_object_or_none(Test, pk=test_id):
-            logger.debug('Using existing Test by id: %s', test_id)
+            logger.debug("Using existing Test by id: %s", test_id)
             return test
         # If the engagement is not supplied, we cannot do anything
         if not engagement:
@@ -218,7 +220,7 @@ class AutoCreateContextManager:
     """
     def get_or_create_product_type(
         self,
-        product_type_name: str = None,
+        product_type_name: str | None = None,
         **kwargs: dict,
     ) -> Product_Type:
         """
@@ -229,21 +231,21 @@ class AutoCreateContextManager:
         # Look for an existing object
         if product_type := self.get_target_product_type_if_exists(product_type_name=product_type_name):
             return product_type
-        else:
-            with transaction.atomic():
-                product_type, created = Product_Type.objects.select_for_update().get_or_create(name=product_type_name)
-                if created:
-                    Product_Type_Member.objects.create(
-                        user=get_current_user(),
-                        product_type=product_type,
-                        role=Role.objects.get(is_owner=True),
-                    )
-                return product_type
+        with transaction.atomic():
+            product_type, created = Product_Type.objects.select_for_update().get_or_create(name=product_type_name)
+            if created:
+                Product_Type_Member.objects.create(
+                    user=get_current_user(),
+                    product_type=product_type,
+                    role=Role.objects.get(is_owner=True),
+                )
+            return product_type
 
     def get_or_create_product(
         self,
-        product_name: str = None,
-        product_type_name: str = None,
+        product_name: str | None = None,
+        product_type_name: str | None = None,
+        *,
         auto_create_context: bool = False,
         **kwargs: dict,
     ) -> Product:
@@ -276,18 +278,17 @@ class AutoCreateContextManager:
     def get_or_create_engagement(
         self,
         engagement_id: int = 0,
-        engagement_name: str = None,
-        product_name: str = None,
-        product_type_name: str = None,
+        engagement_name: str | None = None,
+        product_name: str | None = None,
+        product_type_name: str | None = None,
+        *,
         auto_create_context: bool = False,
         deduplication_on_engagement: bool = False,
-        source_code_management_uri: str = None,
-        target_end: datetime = None,
+        source_code_management_uri: str | None = None,
+        target_end: datetime | None = None,
         **kwargs: dict,
     ) -> Engagement:
-        """
-        Fetches an engagement by name or ID if one already exists.
-        """
+        """Fetches an engagement by name or ID if one already exists."""
         # try to find the engagement (and product)
         product = self.get_target_product_if_exists(
             product_name=product_name,
@@ -296,7 +297,7 @@ class AutoCreateContextManager:
         engagement = self.get_target_engagement_if_exists(
             engagement_id=engagement_id,
             engagement_name=engagement_name,
-            product=product
+            product=product,
         )
         # If we have an engagement, we cna just return it
         if engagement:

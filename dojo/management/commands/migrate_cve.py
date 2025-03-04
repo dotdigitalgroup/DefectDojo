@@ -15,20 +15,19 @@ logger = logging.getLogger(__name__)
 
 def create_vulnerability_id(finding):
     Vulnerability_Id.objects.get_or_create(
-        finding=finding, vulnerability_id=finding.cve
+        finding=finding, vulnerability_id=finding.cve,
     )
 
 
 def create_vulnerability_id_template(finding_template):
     Vulnerability_Id_Template.objects.get_or_create(
-        finding_template=finding_template, vulnerability_id=finding_template.cve
+        finding_template=finding_template, vulnerability_id=finding_template.cve,
     )
 
 
 class Command(BaseCommand):
-    """
-    This management command creates vulnerability ids for all findings / findings_templates with cve's.
-    """
+
+    """This management command creates vulnerability ids for all findings / findings_templates with cve's."""
 
     help = "Usage: manage.py migrate_cve"
 
@@ -39,7 +38,7 @@ class Command(BaseCommand):
         mass_model_updater(
             Finding,
             findings,
-            lambda f: create_vulnerability_id(f),
+            create_vulnerability_id,
             fields=None,
             page_size=100,
             log_prefix="creating vulnerability ids: ",
@@ -50,7 +49,7 @@ class Command(BaseCommand):
         mass_model_updater(
             Finding_Template,
             finding_templates,
-            lambda f: create_vulnerability_id_template(f),
+            create_vulnerability_id_template,
             fields=None,
             page_size=100,
             log_prefix="creating vulnerability ids: ",

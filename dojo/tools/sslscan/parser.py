@@ -41,14 +41,14 @@ class SslscanParser:
                     title = "heartbleed" + " | " + target.attrib["sslversion"]
                     description = (
                         "**heartbleed** :"
-                        + "\n\n"
-                        + "**sslversion** : "
+                        "\n\n"
+                        "**sslversion** : "
                         + target.attrib["sslversion"]
                         + "\n"
                     )
                 if target.tag == "cipher" and target.attrib[
                     "strength"
-                ] not in ["acceptable", "strong"]:
+                ] not in {"acceptable", "strong"}:
                     title = "cipher" + " | " + target.attrib["sslversion"]
                     description = (
                         "**Cipher** : "
@@ -67,7 +67,7 @@ class SslscanParser:
 
                 if title and description is not None:
                     dupe_key = hashlib.sha256(
-                        str(description + title).encode("utf-8")
+                        str(description + title).encode("utf-8"),
                     ).hexdigest()
                     if dupe_key in dupes:
                         finding = dupes[dupe_key]
@@ -88,9 +88,6 @@ class SslscanParser:
                         dupes[dupe_key] = finding
 
                         if host:
-                            if "://" in host:
-                                endpoint = Endpoint.from_uri(host)
-                            else:
-                                endpoint = Endpoint(host=host, port=port)
+                            endpoint = Endpoint.from_uri(host) if "://" in host else Endpoint(host=host, port=port)
                             finding.unsaved_endpoints.append(endpoint)
-        return dupes.values()
+        return list(dupes.values())

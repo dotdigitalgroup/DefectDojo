@@ -7,6 +7,7 @@ from dojo.tools.parser_test import ParserTest
 
 
 class ScoutSuiteParser:
+
     """"ScoutSuite Wiki: https://github.com/nccgroup/ScoutSuite/wiki"""
 
     ID = "Scout Suite"
@@ -63,13 +64,13 @@ class ScoutSuiteParser:
                     str(items["max_level"]),
                     str(items["resources_count"]),
                     str(items["rules_count"]),
-                ]
+                ],
             )
 
         tests = []
         test = ParserTest(
             name=self.ID,
-            type=data["provider_name"],
+            parser_type=data["provider_name"],
             version=last_run.get("version"),
         )
         test.description = test_description
@@ -92,7 +93,7 @@ class ScoutSuiteParser:
         last_run_date = None
         if "time" in data.get("last_run", {}):
             last_run_date = datetime.strptime(
-                data["last_run"]["time"][0:10], "%Y-%m-%d"
+                data["last_run"]["time"][0:10], "%Y-%m-%d",
             ).date()
 
         # Configured Services
@@ -119,10 +120,10 @@ class ScoutSuiteParser:
                                     or key[i - 1] == "PolicyDocument"
                                 ):
                                     break
-                        i = i + 1
+                        i += 1
 
                     self.recursive_print(lookup)
-                    description_text = description_text + self.item_data
+                    description_text += self.item_data
                     self.item_data = ""
 
                     find = Finding(
@@ -138,7 +139,7 @@ class ScoutSuiteParser:
                         dynamic_finding=False,
                         static_finding=True,
                         vuln_id_from_tool=":".join(
-                            [data["provider_code"], finding_name]
+                            [data["provider_code"], finding_name],
                         ),
                     )
                     if finding.get("references"):
@@ -150,8 +151,7 @@ class ScoutSuiteParser:
     def formatview(self, depth):
         if depth > 1:
             return "* "
-        else:
-            return ""
+        return ""
 
     def recursive_print(self, src, depth=0, key=""):
         def tabs(n):
@@ -166,7 +166,7 @@ class ScoutSuiteParser:
                 self.recursive_print(litem, depth + 2)
         else:
             if self.pdepth != depth:
-                self.item_data = self.item_data + "\n"
+                self.item_data += "\n"
             if key:
                 self.item_data = (
                     self.item_data

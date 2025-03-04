@@ -12,6 +12,69 @@ logger = logging.getLogger(__name__)
 
 
 class CheckmarxParser:
+
+    def get_fields(self) -> list[str]:
+        """
+        Return the list of fields used in the Checkmarx Parser.
+
+        Fields:
+        - title: Constructed from output of Checkmarx Scanner.
+        - cwe: Set to cwe outputted by Checkmarx Parser.
+        - active: Set to boolean value based on state returned by Checkmarx Parser.
+        - verified: Set to boolean value based on state returned by Checkmarx Parser.
+        - false_p: Set to boolean value based on "falsePositive" returned by Checkmarx Parser.
+        - description: Made from combining linenumber, column, source object, and number.
+        - severity: Set to severity outputted by Checkmarx Scanner.
+        - file_path: Set to filename outputted by Checkmarx Scanner.
+        - date: Set to date outputted by Checkmarx Scanner.
+        - nb_occurences: Inittially set to 1 and then updated accordingly.
+        - line: Set to line outputted by Checkmarx Scanner.
+        - unique_id_from_tool: [If mode set to detailed] Set to the unique pathId outputted by Checkmarx Parser.
+        - sast_source_object: [If mode set to detailed] Set to sourceObject outputted by Checkmarx Parser.
+        - sast_sink_object: [If mode set to detailed] Set to sinkObject outputted by Checkmarx Parser.
+        - sast_source_line: [If mode set to detailed] Set to sourceLineNumber outputted by Checkmarx Parser.
+        - sast_source_file_path: [If mode set to detailed] Set to sourceFilename outputted by Checkmarx Parser.
+        - vuln_id_from_tool: Set to id from Checkmarx Scanner.
+        - component_name: Set to value within the "name" returned from the Checkmarx Scanner.
+        - component_version: Set to value within the "name" returned from the Checkmarx Scanner.
+        """
+        return [
+            "title"
+            "cwe",
+            "active",
+            "verified",
+            "false_p",
+            "description",
+            "severity",
+            "file_path",
+            "date",
+            "nb_occurences",
+            "line",
+            "unique_id_from_tool",
+            "sast_source_object",
+            "sast_sink_object",
+            "sast_source_line",
+            "sast_source_file_path",
+            "vuln_id_from_tool",
+            "component_name",
+            "component_version",
+        ]
+
+    def get_dedupe_fields(self) -> list[str]:
+        """
+        Return the list of fields used for deduplication in the Checkmarx Parser.
+
+        Fields:
+        - cwe: Set to cwe outputted by Checkmarx Parser.
+        - severity: Set to severity outputted by Checkmarx Scanner.
+        - file_path: Set to filename outputted by Checkmarx Scanner.
+        """
+        return [
+            "cwe",
+            "severity",
+            "file_path",
+        ]
+
     def get_scan_types(self):
         return ["Checkmarx Scan", "Checkmarx Scan detailed"]
 
@@ -21,8 +84,7 @@ class CheckmarxParser:
     def get_description_for_scan_types(self, scan_type):
         if scan_type == "Checkmarx Scan":
             return "Simple Report. Aggregates vulnerabilities per categories, cwe, name, sinkFilename"
-        else:
-            return "Detailed Report. Import all vulnerabilities from checkmarx without aggregation"
+        return "Detailed Report. Import all vulnerabilities from checkmarx without aggregation"
 
     # mode:
     # None (default): aggregates vulnerabilites per sink filename (legacy behavior)
@@ -75,24 +137,24 @@ class CheckmarxParser:
                     if language not in language_list:
                         language_list[language] = 1
                     else:
-                        language_list[language] = language_list[language] + 1
+                        language_list[language] += 1
 
                 if group is not None:
                     findingdetail = f"{findingdetail}**Group:** {group}\n"
 
                 if result.get("Status") is not None:
                     findingdetail = "{}**Status:** {}\n".format(
-                        findingdetail, result.get("Status")
+                        findingdetail, result.get("Status"),
                     )
 
                 deeplink = "[{}]({})".format(
-                    result.get("DeepLink"), result.get("DeepLink")
+                    result.get("DeepLink"), result.get("DeepLink"),
                 )
                 findingdetail = f"{findingdetail}**Finding Link:** {deeplink}\n"
 
                 if self.mode == "detailed":
                     self._process_result_detailed(
-                        test, dupes, findingdetail, query, result, find_date
+                        test, dupes, findingdetail, query, result, find_date,
                     )
                 else:
                     self._process_result_file_name_aggregated(
@@ -111,11 +173,11 @@ class CheckmarxParser:
                 for key in list(dupes):
                     vuln_ids_from_tool[key].sort
                     dupes[key].vuln_id_from_tool = ",".join(
-                        vuln_ids_from_tool[key]
+                        vuln_ids_from_tool[key],
                     )[:500]
         for lang in language_list:
             add_language(
-                test.engagement.product, lang, files=language_list[lang]
+                test.engagement.product, lang, files=language_list[lang],
             )
 
         return list(dupes.values())
@@ -130,20 +192,18 @@ class CheckmarxParser:
         result,
         find_date,
     ):
-        """Process one result = one pathId for default "Checkmarx Scan"
+        """
+        Process one result = one pathId for default "Checkmarx Scan"
         Create the finding and add it into the dupes list
         If a vuln with the same file_path was found before, updates the description
         """
         _name, cwe, _categories, queryId = self.getQueryElements(query)
         titleStart = query.get("name").replace("_", " ")
         description, lastPathnode = self.get_description_file_name_aggregated(
-            query, result
+            query, result,
         )
         sinkFilename = lastPathnode.find("FileName").text
-        if sinkFilename:
-            title = "{} ({})".format(titleStart, sinkFilename.split("/")[-1])
-        else:
-            title = titleStart
+        title = "{} ({})".format(titleStart, sinkFilename.split("/")[-1]) if sinkFilename else titleStart
         false_p = result.get("FalsePositive")
         sev = result.get("Severity")
         aggregateKeys = f"{cwe}{sev}{sinkFilename}"
@@ -180,7 +240,7 @@ class CheckmarxParser:
             # We have already created a finding for this aggregate: updates the
             # description and the nb_occurences
             find = dupes[aggregateKeys]
-            find.nb_occurences = find.nb_occurences + 1
+            find.nb_occurences += 1
             if find.nb_occurences == 2:
                 find.description = f"### 1. {find.title}\n{find.description}"
             find.description = f"{find.description}\n\n-----\n### {find.nb_occurences}. {title}\n{findingdetail}\n{description}"
@@ -218,16 +278,17 @@ class CheckmarxParser:
         # At this point we have iterated over all path nodes (function calls)
         # and pathnode is at the sink of the vulnerability
         sinkFilename, sinkLineNumber, sinkObject = self.get_pathnode_elements(
-            pathnode
+            pathnode,
         )
         description = f"<b>Source file: </b>{sourceFilename} (line {sourceLineNumber})\n<b>Source object: </b> {sourceObject}"
         description = f"{description}\n<b>Sink file: </b>{sinkFilename} (line {sinkLineNumber})\n<b>Sink object: </b> {sinkObject}"
         return description, pathnode
 
     def _process_result_detailed(
-        self, test, dupes, findingdetail, query, result, find_date
+        self, test, dupes, findingdetail, query, result, find_date,
     ):
-        """Process one result = one pathId for scanner "Checkmarx Scan detailed"
+        """
+        Process one result = one pathId for scanner "Checkmarx Scan detailed"
         Create the finding and add it into the dupes list
         """
         name, cwe, categories, queryId = self.getQueryElements(query)
@@ -240,7 +301,7 @@ class CheckmarxParser:
             logger.warning(
                 "Checkmarx scan: more than one path found: "
                 + str(len(paths))
-                + ". Only the last one will be used"
+                + ". Only the last one will be used",
             )
 
         for path in paths:
@@ -257,7 +318,7 @@ class CheckmarxParser:
             # Loop over function calls / assignments in the data flow graph
             for pathnode in path.findall("PathNode"):
                 findingdetail = self.get_description_detailed(
-                    pathnode, findingdetail
+                    pathnode, findingdetail,
                 )
                 nodeId = pathnode.find("NodeId").text
                 if nodeId == "1":
@@ -313,17 +374,17 @@ class CheckmarxParser:
     def get_description_detailed(self, pathnode, findingdetail):
         if pathnode.find("Line").text is not None:
             findingdetail = "{}**Line Number:** {}\n".format(
-                findingdetail, pathnode.find("Line").text
+                findingdetail, pathnode.find("Line").text,
             )
 
         if pathnode.find("Column").text is not None:
             findingdetail = "{}**Column:** {}\n".format(
-                findingdetail, pathnode.find("Column").text
+                findingdetail, pathnode.find("Column").text,
             )
 
         if pathnode.find("Name").text is not None:
             findingdetail = "{}**Source Object:** {}\n".format(
-                findingdetail, pathnode.find("Name").text
+                findingdetail, pathnode.find("Name").text,
             )
 
         for codefragment in pathnode.findall("Snippet/Line"):
@@ -333,8 +394,7 @@ class CheckmarxParser:
                 codefragment.find("Code").text.strip(),
             )
 
-        findingdetail = f"{findingdetail}-----\n"
-        return findingdetail
+        return f"{findingdetail}-----\n"
 
     # Get name, cwe and categories from the global query tag (1 query = 1 type
     # of vulnerability)
@@ -362,16 +422,14 @@ class CheckmarxParser:
     def get_findings(self, file, test):
         if file.name.strip().lower().endswith(".json"):
             return self._get_findings_json(file, test)
-        else:
-            return self._get_findings_xml(file, test)
+        return self._get_findings_xml(file, test)
 
     def _parse_date(self, value):
         if isinstance(value, str):
             return parser.parse(value).date()
-        elif isinstance(value, dict) and isinstance(value.get("seconds"), int):
-            return datetime.datetime.utcfromtimestamp(value.get("seconds")).date()
-        else:
-            return None
+        if isinstance(value, dict) and isinstance(value.get("seconds"), int):
+            return datetime.datetime.fromtimestamp(value.get("seconds"), datetime.UTC).date()
+        return None
 
     def _get_findings_json(self, file, test):
         """"""
@@ -392,7 +450,7 @@ class CheckmarxParser:
                                 description=descriptiondetails,
                                 title=title,
                                 date=self._parse_date(
-                                    vulnerability.get("firstFoundDate")
+                                    vulnerability.get("firstFoundDate"),
                                 ),
                                 severity=vulnerability.get("severity").title(),
                                 active=(
@@ -412,7 +470,7 @@ class CheckmarxParser:
                                 )
                             else:
                                 finding.unique_id_from_tool = str(
-                                    vulnerability.get("similarityId")
+                                    vulnerability.get("similarityId"),
                                 )
                             # get the last node and set some values
                             if vulnerability.get("nodes"):
@@ -431,7 +489,7 @@ class CheckmarxParser:
                             title=f"{component_name}:{component_version} | {cve}",
                             description=vulnerability.get("description"),
                             date=self._parse_date(
-                                vulnerability.get("firstFoundDate")
+                                vulnerability.get("firstFoundDate"),
                             ),
                             severity=vulnerability.get("severity").title(),
                             active=(
@@ -449,15 +507,15 @@ class CheckmarxParser:
                         )
                         if vulnerability.get("cveId"):
                             finding.unsaved_vulnerability_ids = [
-                                vulnerability.get("cveId")
+                                vulnerability.get("cveId"),
                             ]
                         if vulnerability.get("id"):
                             finding.unique_id_from_tool = vulnerability.get(
-                                "id"
+                                "id",
                             )
                         else:
                             finding.unique_id_from_tool = str(
-                                vulnerability.get("similarityId")
+                                vulnerability.get("similarityId"),
                             )
                         finding.unsaved_tags = [result_type]
                         findings.append(finding)
@@ -469,7 +527,7 @@ class CheckmarxParser:
                             title=f'{name} | {vulnerability.get("issueType")}',
                             description=vulnerability.get("description"),
                             date=self._parse_date(
-                                vulnerability.get("firstFoundDate")
+                                vulnerability.get("firstFoundDate"),
                             ),
                             severity=vulnerability.get("severity").title(),
                             active=(
@@ -482,18 +540,18 @@ class CheckmarxParser:
                             file_path=vulnerability.get("fileName"),
                             line=vulnerability.get("line", 0),
                             severity_justification=vulnerability.get(
-                                "actualValue"
+                                "actualValue",
                             ),
                             test=test,
                             static_finding=True,
                         )
                         if vulnerability.get("id"):
                             finding.unique_id_from_tool = vulnerability.get(
-                                "id"
+                                "id",
                             )
                         else:
                             finding.unique_id_from_tool = str(
-                                vulnerability.get("similarityId")
+                                vulnerability.get("similarityId"),
                             )
                         finding.unsaved_tags = [result_type, name]
                         findings.append(finding)

@@ -13,12 +13,12 @@ class KubeAuditParser:
     def get_description_for_scan_types(self, scan_type):
         return "Import JSON reports of Kubeaudit Scans."
 
-    def severity_mapping(self, input):
-        if input == "warning":
+    def severity_mapping(self, severity_input):
+        if severity_input == "warning":
             severity = "Medium"
-        elif input == "error":
+        elif severity_input == "error":
             severity = "High"
-        elif input == "info":
+        elif severity_input == "info":
             severity = "Info"
         else:
             severity = "Low"
@@ -32,19 +32,19 @@ class KubeAuditParser:
                 tree = json.loads(str(line, "utf-8"))
             except BaseException:
                 tree = json.loads(line)
-            AuditResultName = tree.get('AuditResultName', None)
-            DeprecatedMajor = tree.get('DeprecatedMajor', None)
-            DeprecatedMinor = tree.get('DeprecatedMinor', None)
-            IntroducedMajor = tree.get('IntroducedMajor', None)
-            IntroducedMinor = tree.get('IntroducedMinor', None)
-            ResourceApiVersion = tree.get('ResourceApiVersion', None)
-            ResourceKind = tree.get('ResourceKind', None)
-            ResourceName = tree.get('ResourceName', None)
-            level = tree.get('level', None)
-            msg = tree.get('msg', None)
-            Container = tree.get('Container', None)
-            MissingAnnotation = tree.get('MissingAnnotation', None)
-            ResourceNamespace = tree.get('ResourceNamespace', None)
+            AuditResultName = tree.get("AuditResultName", None)
+            DeprecatedMajor = tree.get("DeprecatedMajor", None)
+            DeprecatedMinor = tree.get("DeprecatedMinor", None)
+            IntroducedMajor = tree.get("IntroducedMajor", None)
+            IntroducedMinor = tree.get("IntroducedMinor", None)
+            ResourceApiVersion = tree.get("ResourceApiVersion", None)
+            ResourceKind = tree.get("ResourceKind", None)
+            ResourceName = tree.get("ResourceName", None)
+            level = tree.get("level", None)
+            msg = tree.get("msg", None)
+            Container = tree.get("Container", None)
+            MissingAnnotation = tree.get("MissingAnnotation", None)
+            ResourceNamespace = tree.get("ResourceNamespace", None)
             description = ""
             if AuditResultName:
                 description += "AuditResultName: " + AuditResultName + "\n"

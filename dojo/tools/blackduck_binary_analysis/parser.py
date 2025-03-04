@@ -8,6 +8,7 @@ from .importer import BlackduckBinaryAnalysisImporter
 
 
 class BlackduckBinaryAnalysisParser:
+
     """
     Report type(s) from Blackduck Binary Analysis compatible with DefectDojo:
     - Single CSV file containing vulnerable components
@@ -29,10 +30,9 @@ class BlackduckBinaryAnalysisParser:
     def sort_findings(self, filename):
         importer = BlackduckBinaryAnalysisImporter()
 
-        findings = sorted(
+        return sorted(
             importer.parse_findings(filename), key=lambda f: f.cve,
         )
-        return findings
 
     def ingest_findings(self, sorted_findings, test):
         findings = {}
@@ -47,14 +47,14 @@ class BlackduckBinaryAnalysisParser:
             if str(i.cvss_vector_v3) != "":
                 cvss_vectors = "{}{}".format(
                     "CVSS:3.1/",
-                    i.cvss_vector_v3
+                    i.cvss_vector_v3,
                 )
                 cvss_obj = CVSS3(cvss_vectors)
             elif str(i.cvss_vector_v2) != "":
                 # Some of the CVSSv2 vectors have a trailing
                 # colon that needs to be removed
                 cvss_v3 = False
-                cvss_vectors = i.cvss_vector_v2.replace(':/', '/')
+                cvss_vectors = i.cvss_vector_v2.replace(":/", "/")
                 cvss_obj = CVSS2(cvss_vectors)
             else:
                 cvss_vectors = "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N"
@@ -68,7 +68,7 @@ class BlackduckBinaryAnalysisParser:
             references = self.format_references(i)
 
             unique_finding_key = hashlib.sha256(
-                f"{file_path + object_sha1 + title}".encode()
+                f"{file_path + object_sha1 + title}".encode(),
             ).hexdigest()
 
             if unique_finding_key in findings:
@@ -104,7 +104,7 @@ class BlackduckBinaryAnalysisParser:
 
                 findings[unique_finding_key] = finding
 
-        return findings.values()
+        return list(findings.values())
 
     def format_title(self, i):
         title = f"{i.object_name}: {i.component} {i.version} Vulnerable"
@@ -115,44 +115,42 @@ class BlackduckBinaryAnalysisParser:
         return title
 
     def format_description(self, i):
-        description = f"CSV Result: {str(i.report_name)}\n"
-        description += f"Vulnerable Component: {str(i.component)}\n"
-        description += f"Vulnerable Component Version in Use: {str(i.version)}\n"
-        description += f"Vulnerable Component Latest Version: {str(i.latest_version)}\n"
-        description += f"Matching Type: {str(i.matching_type)}\n"
-        description += f"Object Name: {str(i.object_name)}\n"
-        description += f"Object Extraction Path: {str(i.object_full_path)}\n"
-        description += f"Object Compilation Date: {str(i.object_compilation_date)}\n"
-        description += f"Object SHA1: {str(i.object_sha1)}\n"
-        description += f"CVE: {str(i.cve)}\n"
-        description += f"CVE Publication Date: {str(i.cve_publication_date)}\n"
-        description += f"Distribution Package: {str(i.distribution_package)}\n"
-        description += f"Missing Exploit Mitigations: {str(i.missing_exploit_mitigations)}\n"
-        description += f"BDSA: {str(i.bdsa)}\n"
-        description += f"Summary:\n{str(i.summary)}\n"
-        description += f"Note Type:\n{str(i.note_type)}\n"
-        description += f"Note Reason:\n{str(i.note_reason)}\n"
-        description += f"Triage Vectors:\n{str(i.triage_vectors)}\n"
-        description += f"Unresolving Triage Vectors:\n{str(i.triage_vectors)}\n"
+        description = f"CSV Result: {i.report_name}\n"
+        description += f"Vulnerable Component: {i.component}\n"
+        description += f"Vulnerable Component Version in Use: {i.version}\n"
+        description += f"Vulnerable Component Latest Version: {i.latest_version}\n"
+        description += f"Matching Type: {i.matching_type}\n"
+        description += f"Object Name: {i.object_name}\n"
+        description += f"Object Extraction Path: {i.object_full_path}\n"
+        description += f"Object Compilation Date: {i.object_compilation_date}\n"
+        description += f"Object SHA1: {i.object_sha1}\n"
+        description += f"CVE: {i.cve}\n"
+        description += f"CVE Publication Date: {i.cve_publication_date}\n"
+        description += f"Distribution Package: {i.distribution_package}\n"
+        description += f"Missing Exploit Mitigations: {i.missing_exploit_mitigations}\n"
+        description += f"BDSA: {i.bdsa}\n"
+        description += f"Summary:\n{i.summary}\n"
+        description += f"Note Type:\n{i.note_type}\n"
+        description += f"Note Reason:\n{i.note_reason}\n"
+        description += f"Triage Vectors:\n{i.triage_vectors}\n"
+        description += f"Unresolving Triage Vectors:\n{i.triage_vectors}\n"
 
         return description
 
     def format_mitigation(self, i):
-        mitigation = f"Upgrade {str(i.component)} to latest version: {str(i.latest_version)}.\n"
-
-        return mitigation
+        return f"Upgrade {i.component} to latest version: {i.latest_version}.\n"
 
     def format_impact(self, i):
         impact = "The use of vulnerable third-party open source software in applications can have numerous negative impacts:\n\n"
         impact += "1. **Security Impact**: Vulnerable software can be exploited by hackers to compromise applications or systems, leading to unauthorized access, data theft, and/or malicious activities.  This would impact the confidentiality, data integrity, and/or operational availability of software exploited.\n"
         impact += "2. **Financial Impact**: Incidents involving security breaches can result in substantial financial loss to responsible organization(s).\n"
-        impact += "3. **Reputation Impact**: A security breach can greatly harm an organization’s reputation. Rebuilding public trust after a breach can be a substantial and long-lasting challenge.\n"
+        impact += "3. **Reputation Impact**: A security breach can greatly harm an organization's reputation. Rebuilding public trust after a breach can be a substantial and long-lasting challenge.\n"
         impact += "4. **Compliance Impact**: Many industries have strict regulations about data protection. Use of vulnerable software could compromise data security measures and result in compliance violations, leading to potential fines and other penalties.\n"
 
         return impact
 
     def format_references(self, i):
-        references = f"BDSA: {str(i.bdsa)}\n"
-        references += f"NIST CVE Details: {str(i.vulnerability_url)}\n"
+        references = f"BDSA: {i.bdsa}\n"
+        references += f"NIST CVE Details: {i.vulnerability_url}\n"
 
         return references

@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class WapitiParser:
-    """The web-application vulnerability scanner
+
+    """
+    The web-application vulnerability scanner
 
     see: https://wapiti.sourceforge.io/
     """
@@ -56,7 +58,7 @@ class WapitiParser:
                 if reference_title.startswith("CWE"):
                     cwe = self.get_cwe(reference_title)
                 references.append(
-                    f"* [{reference_title}]({reference.findtext('url')})"
+                    f"* [{reference_title}]({reference.findtext('url')})",
                 )
             references = "\n".join(references)
 
@@ -64,10 +66,7 @@ class WapitiParser:
                 title = category + ": " + entry.findtext("info")
                 # get numerical severity.
                 num_severity = entry.findtext("level")
-                if num_severity in severity_mapping:
-                    severity = severity_mapping[num_severity]
-                else:
-                    severity = "Info"
+                severity = severity_mapping.get(num_severity, "Info")
 
                 finding = Finding(
                     title=title,
@@ -84,12 +83,12 @@ class WapitiParser:
                 finding.unsaved_endpoints = [Endpoint.from_uri(url)]
 
                 finding.unsaved_req_resp = [
-                    {"req": entry.findtext("http_request"), "resp": ""}
+                    {"req": entry.findtext("http_request"), "resp": ""},
                 ]
 
                 # make dupe hash key
                 dupe_key = hashlib.sha256(
-                    str(description + title + severity).encode("utf-8")
+                    str(description + title + severity).encode("utf-8"),
                 ).hexdigest()
                 # check if dupes are present.
                 if dupe_key in dupes:
@@ -105,8 +104,7 @@ class WapitiParser:
     @staticmethod
     def get_cwe(val):
         # Match only the first CWE!
-        cweSearch = re.search("CWE-(\\d+)", val, re.IGNORECASE)
+        cweSearch = re.search(r"CWE-(\d+)", val, re.IGNORECASE)
         if cweSearch:
             return int(cweSearch.group(1))
-        else:
-            return None
+        return None

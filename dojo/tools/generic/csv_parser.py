@@ -16,7 +16,7 @@ class GenericCSVParser:
         if isinstance(content, bytes):
             content = content.decode("utf-8")
         reader = csv.DictReader(
-            io.StringIO(content), delimiter=",", quotechar='"'
+            io.StringIO(content), delimiter=",", quotechar='"',
         )
 
         dupes = {}
@@ -27,7 +27,7 @@ class GenericCSVParser:
                 date=parse(row["Date"]).date(),
                 severity=self.get_severity(row["Severity"]),
                 duplicate=self._convert_bool(
-                    row.get("Duplicate", "FALSE")
+                    row.get("Duplicate", "FALSE"),
                 ),  # bool False by default
                 nb_occurences=1,
             )
@@ -53,18 +53,24 @@ class GenericCSVParser:
             if "CVE" in row and [row["CVE"]]:
                 finding.unsaved_vulnerability_ids = [row["CVE"]]
             # manage Vulnerability Id
-            if "Vulnerability Id" in row and row["Vulnerability Id"]:
+            if row.get("Vulnerability Id"):
                 if finding.unsaved_vulnerability_ids:
                     finding.unsaved_vulnerability_ids.append(
-                        row["Vulnerability Id"]
+                        row["Vulnerability Id"],
                     )
                 else:
                     finding.unsaved_vulnerability_ids = [
-                        row["Vulnerability Id"]
+                        row["Vulnerability Id"],
                     ]
             # manage CWE
             if "CweId" in row:
                 finding.cwe = int(row["CweId"])
+
+            if "epss_score" in row:
+                finding.epss_score = float(row["epss_score"])
+
+            if "epss_percentile" in row:
+                finding.epss_percentile = float(row["epss_percentile"])
 
             if "CVSSV3" in row:
                 cvss_objects = cvss_parser.parse_cvss_from_text(row["CVSSV3"])
@@ -76,19 +82,19 @@ class GenericCSVParser:
                 finding.unsaved_endpoints = [
                     Endpoint.from_uri(row["Url"])
                     if "://" in row["Url"]
-                    else Endpoint.from_uri("//" + row["Url"])
+                    else Endpoint.from_uri("//" + row["Url"]),
                 ]
 
             # manage internal de-duplication
             key = hashlib.sha256(
-                f"{finding.severity}|{finding.title}|{finding.description}".encode()
+                f"{finding.severity}|{finding.title}|{finding.description}".encode(),
             ).hexdigest()
             if key in dupes:
                 find = dupes[key]
                 find.unsaved_endpoints.extend(finding.unsaved_endpoints)
                 if find.unsaved_vulnerability_ids:
                     find.unsaved_vulnerability_ids.extend(
-                        finding.unsaved_vulnerability_ids
+                        finding.unsaved_vulnerability_ids,
                     )
                 else:
                     find.unsaved_vulnerability_ids = (
@@ -102,8 +108,7 @@ class GenericCSVParser:
     def _convert_bool(self, val):
         return val.lower()[0:1] == "t"  # bool False by default
 
-    def get_severity(self, input):
-        if input in ["Info", "Low", "Medium", "High", "Critical"]:
-            return input
-        else:
-            return "Info"
+    def get_severity(self, severity_input):
+        if severity_input in {"Info", "Low", "Medium", "High", "Critical"}:
+            return severity_input
+        return "Info"

@@ -5,9 +5,8 @@ from dojo.models import Finding
 
 
 class TFSecParser:
-    """
-    A class that can be used to parse the tfsec JSON report file
-    """
+
+    """A class that can be used to parse the tfsec JSON report file"""
 
     # table to match tfsec severity to DefectDojo severity
     SEVERITY = {
@@ -47,18 +46,12 @@ class TFSecParser:
             start_line = item.get("location").get("start_line")
             end_line = item.get("location").get("end_line")
             description = "\n".join(
-                ["Rule ID: " + rule_id, item.get("description")]
+                ["Rule ID: " + rule_id, item.get("description")],
             )
             impact = item.get("impact")
             resolution = item.get("resolution")
-            if item.get("links", None) is not None:
-                references = "\n".join(item.get("links"))
-            else:
-                references = item.get("link", None)
-            if item.get("severity").upper() in self.SEVERITY:
-                severity = self.SEVERITY[item.get("severity").upper()]
-            else:
-                severity = "Low"
+            references = "\n".join(item.get("links")) if item.get("links", None) is not None else item.get("link", None)
+            severity = self.SEVERITY.get(item.get("severity").upper(), "Low")
 
             dupe_key = hashlib.sha256(
                 (
@@ -67,7 +60,7 @@ class TFSecParser:
                     + file
                     + str(start_line)
                     + str(end_line)
-                ).encode("utf-8")
+                ).encode("utf-8"),
             ).hexdigest()
 
             if dupe_key in dupes:

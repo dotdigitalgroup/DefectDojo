@@ -7,6 +7,7 @@ from dojo.models import Finding
 
 
 class JFrogXrayParser:
+
     """JFrog Xray JSON reports"""
 
     def get_scan_types(self):
@@ -32,7 +33,7 @@ class JFrogXrayParser:
 
                 title_cve = "No CVE"
                 more_details = node.get("component_versions").get(
-                    "more_details"
+                    "more_details",
                 )
                 if "cves" in more_details:
                     if "cve" in more_details.get("cves")[0]:
@@ -65,10 +66,7 @@ def decode_cwe_number(value):
 def get_item(vulnerability, test):
     # Following the CVSS Scoring per https://nvd.nist.gov/vuln-metrics/cvss
     if "severity" in vulnerability:
-        if vulnerability["severity"] == "Unknown":
-            severity = "Info"
-        else:
-            severity = vulnerability["severity"].title()
+        severity = "Info" if vulnerability["severity"] == "Unknown" else vulnerability["severity"].title()
     # TODO: Needs UNKNOWN new status in the model.
     else:
         severity = "Info"
@@ -96,14 +94,14 @@ def get_item(vulnerability, test):
 
     if "fixed_versions" in vulnerability["component_versions"]:
         mitigation = "**Versions containing a fix:**\n"
-        mitigation = mitigation + "\n".join(
-            vulnerability["component_versions"]["fixed_versions"]
+        mitigation += "\n".join(
+            vulnerability["component_versions"]["fixed_versions"],
         )
 
     if "vulnerable_versions" in vulnerability["component_versions"]:
         extra_desc = "\n**Versions that are vulnerable:**\n"
         extra_desc += "\n".join(
-            vulnerability["component_versions"]["vulnerable_versions"]
+            vulnerability["component_versions"]["vulnerable_versions"],
         )
 
     provider = (
@@ -139,17 +137,16 @@ def get_item(vulnerability, test):
                 + ":"
                 + component_version
             )
+    elif vulnerability["id"]:
+        title = (
+            vulnerability["id"]
+            + " - "
+            + component_name
+            + ":"
+            + component_version
+        )
     else:
-        if vulnerability["id"]:
-            title = (
-                vulnerability["id"]
-                + " - "
-                + component_name
-                + ":"
-                + component_version
-            )
-        else:
-            title = "No CVE - " + component_name + ":" + component_version
+        title = "No CVE - " + component_name + ":" + component_version
 
     # create the finding object
     finding = Finding(

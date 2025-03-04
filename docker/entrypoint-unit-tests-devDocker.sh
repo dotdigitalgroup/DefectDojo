@@ -18,7 +18,25 @@ unset DD_CELERY_BROKER_URL
 
 wait_for_database_to_be_reachable
 
-python3 manage.py makemigrations dojo
+python3 manage.py makemigrations --no-input --check --dry-run --verbosity 3 || {
+    cat <<-EOF
+
+********************************************************************************
+
+You made changes to the models without creating a DB migration for them.
+
+**NEVER** change existing migrations, create a new one.
+
+If you're not familiar with migrations in Django, please read the
+great documentation thoroughly:
+https://docs.djangoproject.com/en/5.0/topics/migrations/
+
+********************************************************************************
+
+EOF
+    exit 1
+}
+
 python3 manage.py migrate
 
 # do the check with Django stack
@@ -53,8 +71,14 @@ EOF
 
 echo "Unit Tests"
 echo "------------------------------------------------------------"
-python3 manage.py test unittests -v 3 --keepdb --no-input --failfast --shuffle --parallel --exclude-tag="non-parallel"
-python3 manage.py test unittests -v 3 --keepdb --no-input --failfast --shuffle --tag="non-parallel"
+
+# Removing parallel and shuffle for now to maintain stability
+python3 manage.py test unittests -v 3 --keepdb --no-input --exclude-tag="non-parallel" || {
+    exit 1;
+}
+python3 manage.py test unittests -v 3 --keepdb --no-input --tag="non-parallel" || {
+    exit 1;
+}
 
 # you can select a single file to "test" unit tests
 # python3 manage.py test unittests.tools.test_npm_audit_scan_parser.TestNpmAuditParser --keepdb -v 3

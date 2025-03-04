@@ -1,6 +1,6 @@
 import datetime
 import json
-from typing import List
+import re
 
 from dateutil import parser
 from django.conf import settings
@@ -21,16 +21,25 @@ class CheckmarxOneParser:
     def _parse_date(self, value):
         if isinstance(value, str):
             return parser.parse(value)
-        elif isinstance(value, dict) and isinstance(value.get("seconds"), int):
-            return datetime.datetime.utcfromtimestamp(value.get("seconds"))
-        else:
+        if isinstance(value, dict) and isinstance(value.get("seconds"), int):
+            return datetime.datetime.fromtimestamp(value.get("seconds"), datetime.UTC)
+        return None
+
+    def _parse_cwe(self, cwe):
+        if isinstance(cwe, str):
+            cwe_num = re.findall(r"\d+", cwe)
+            if cwe_num:
+                return cwe_num[0]
             return None
+        if isinstance(cwe, int):
+            return cwe
+        return None
 
     def parse_vulnerabilities_from_scan_list(
         self,
         test: Test,
         data: dict,
-    ) -> List[Finding]:
+    ) -> list[Finding]:
         findings = []
         cwe_store = data.get("vulnerabilityDetails", [])
         # SAST
@@ -49,7 +58,7 @@ class CheckmarxOneParser:
         test: Test,
         results: list,
         cwe_store: list,
-    ) -> List[Finding]:
+    ) -> list[Finding]:
         findings = []
         for technology in results:
             # Set the name aside for use in the title
@@ -99,17 +108,16 @@ class CheckmarxOneParser:
         test: Test,
         results: list,
         cwe_store: list,
-    ) -> List[Finding]:
+    ) -> list[Finding]:
         # Not implemented yet
-        findings = []
-        return findings
+        return []
 
     def parse_sast_vulnerabilities(
         self,
         test: Test,
         results: list,
         cwe_store: list,
-    ) -> List[Finding]:
+    ) -> list[Finding]:
         def get_cwe_store_entry(cwe_store: list, cwe: int) -> dict:
             # Quick base case
             if cwe is None:
@@ -135,7 +143,7 @@ class CheckmarxOneParser:
                     f"**File Name**: {node.get('fileName')}\n"
                     f"**Method**: {node.get('method')}\n"
                     f"**Line**: {node.get('line')}\n"
-                    f"**Code Snippet**: {node.get('code')}\n"
+                    f"**Code Snippet**: {node.get('code')}\n",
                 )
             return "\n---\n".join(formatted_nodes)
 
@@ -148,7 +156,7 @@ class CheckmarxOneParser:
             # instance of the vulnerability
             base_finding_details = {
                 "title": result.get(
-                    "queryPath", result.get("queryName", "SAST Finding")
+                    "queryPath", result.get("queryName", "SAST Finding"),
                 ).replace("_", " "),
                 "description": (
                     f"{result.get('description')}\n\n"
@@ -188,26 +196,26 @@ class CheckmarxOneParser:
         self,
         test: Test,
         results: list,
-    ) -> List[Finding]:
+    ) -> list[Finding]:
         findings = []
         for result in results:
-            id = result.get("identifiers")[0].get("value")
+            result_id = result.get("identifiers")[0].get("value")
             cwe = None
-            if 'vulnerabilityDetails' in result:
+            if "vulnerabilityDetails" in result:
                 cwe = result.get("vulnerabilites").get("cweId")
             severity = result.get("severity")
             locations_uri = result.get("location").get("file")
             locations_startLine = result.get("location").get("start_line")
             locations_endLine = result.get("location").get("end_line")
             finding = Finding(
-                unique_id_from_tool=id,
+                unique_id_from_tool=result_id,
                 file_path=locations_uri,
                 line=locations_startLine,
-                title=id + "_" + locations_uri,
+                title=result_id + "_" + locations_uri,
                 test=test,
                 cwe=cwe,
                 severity=severity,
-                description="**id**: " + str(id) + "\n"
+                description="**id**: " + str(result_id) + "\n"
                 + "**uri**: " + locations_uri + "\n"
                 + "**startLine**: " + str(locations_startLine) + "\n"
                 + "**endLine**: " + str(locations_endLine) + "\n",
@@ -224,18 +232,18 @@ class CheckmarxOneParser:
         self,
         test: Test,
         results: list,
-    ) -> List[Finding]:
+    ) -> list[Finding]:
         findings = []
         for vulnerability in results:
             result_type = vulnerability.get("type")
             date = self._parse_date(vulnerability.get("firstFoundAt"))
-            cwe = vulnerability.get("vulnerabilityDetails", {}).get("cweId", None)
+            cwe = self._parse_cwe(vulnerability.get("vulnerabilityDetails", {}).get("cweId", None))
             finding = None
             if result_type == "sast":
                 finding = self.get_results_sast(test, vulnerability)
             elif result_type == "kics":
                 finding = self.get_results_kics(test, vulnerability)
-            elif result_type in ["sca", "sca-container"]:
+            elif result_type in {"sca", "sca-container"}:
                 finding = self.get_results_sca(test, vulnerability)
             # Make sure we have a finding before continuing
             if finding is not None:
@@ -254,6 +262,9 @@ class CheckmarxOneParser:
         description = vulnerability.get("description")
         file_path = vulnerability.get("data").get("nodes")[0].get("fileName")
         unique_id_from_tool = vulnerability.get("id", vulnerability.get("similarityId"))
+        if description is None:
+            description = vulnerability.get("severity").title() + " " + vulnerability.get("data").get("queryName").replace("_", " ")
+
         return Finding(
             description=description,
             title=description,
@@ -272,6 +283,9 @@ class CheckmarxOneParser:
         description = vulnerability.get("description")
         file_path = vulnerability.get("data").get("filename", vulnerability.get("data").get("fileName"))
         unique_id_from_tool = vulnerability.get("id", vulnerability.get("similarityId"))
+        if description is None:
+            description = vulnerability.get("severity").title() + " " + vulnerability.get("data").get("queryName").replace("_", " ")
+
         return Finding(
             title=description,
             description=description,
@@ -290,6 +304,9 @@ class CheckmarxOneParser:
     ) -> Finding:
         description = vulnerability.get("description")
         unique_id_from_tool = vulnerability.get("id", vulnerability.get("similarityId"))
+        if description is None:
+            description = vulnerability.get("severity").title() + " " + vulnerability.get("data").get("queryName").replace("_", " ")
+
         finding = Finding(
             title=description,
             description=description,

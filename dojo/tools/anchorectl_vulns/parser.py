@@ -54,10 +54,14 @@ class AnchoreCTLVulnsParser:
             if sev == "Negligible" or sev == "Unknown":
                 sev = "Info"
 
-            mitigation = (
-                "Upgrade to " + item["packageName"] + " " + item["fix"] + "\n"
-            )
-            mitigation += "URL: " + item["url"] + "\n"
+            if item["fix"] != "None":
+                mitigation = (
+                    "Upgrade to " + item["packageName"] + " " + item["fix"] + "\n"
+                )
+            else:
+                mitigation = (
+                    "No fix available" + "\n"
+                )
 
             cvssv3_base_score = None
             if item["feed"] == "nvdv2" or item["feed"] == "vulnerabilities":
@@ -65,34 +69,33 @@ class AnchoreCTLVulnsParser:
                     cvssv3_base_score = item["nvdData"][0]["cvssV3"][
                         "baseScore"
                     ]
-            else:
-                # there may be other keys, but taking a best guess here
-                if "vendorData" in item and len(item["vendorData"]) > 0:
-                    # sometimes cvssv3 in 1st element will have -1 for "not
-                    # set", but have data in the 2nd array item
+            # there may be other keys, but taking a best guess here
+            elif "vendorData" in item and len(item["vendorData"]) > 0:
+                # sometimes cvssv3 in 1st element will have -1 for "not
+                # set", but have data in the 2nd array item
+                if (
+                    "cvssV3" in item["vendorData"][0]
+                    and item["vendorData"][0]["cvssV3"]["baseScore"] != -1
+                ):
+                    cvssv3_base_score = item["vendorData"][0]["cvssV3"][
+                        "baseScore"
+                    ]
+                elif len(item["vendorData"]) > 1:
                     if (
-                        "cvssV3" in item["vendorData"][0]
-                        and item["vendorData"][0]["cvssV3"]["baseScore"] != -1
+                        "cvssV3" in item["vendorData"][1]
+                        and item["vendorData"][1]["cvssV3"]["baseScore"]
+                        != -1
                     ):
-                        cvssv3_base_score = item["vendorData"][0]["cvssV3"][
-                            "baseScore"
-                        ]
-                    elif len(item["vendorData"]) > 1:
-                        if (
-                            "cvssV3" in item["vendorData"][1]
-                            and item["vendorData"][1]["cvssV3"]["baseScore"]
-                            != -1
-                        ):
-                            cvssv3_base_score = item["vendorData"][1][
-                                "cvssV3"
-                            ]["baseScore"]
+                        cvssv3_base_score = item["vendorData"][1][
+                            "cvssV3"
+                        ]["baseScore"]
 
             references = item["url"]
 
             dupe_key = "|".join(
                 [
                     item.get(
-                        "imageDigest", "None"
+                        "imageDigest", "None",
                     ),  # depending on version image_digest/imageDigest
                     item["feed"],
                     item["feedGroup"],
@@ -100,7 +103,7 @@ class AnchoreCTLVulnsParser:
                     item["packageVersion"],
                     item["packagePath"],
                     item["vuln"],
-                ]
+                ],
             )
 
             if dupe_key in dupes:

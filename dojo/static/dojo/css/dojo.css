@@ -446,6 +446,11 @@ form ul {
     padding-left: 0px
 }
 
+form ul li a#reset-password,
+form ul li a#forgot-username {
+    color: rgb(51, 122, 183)
+}
+
 form ul#id_accepted_findings {
     list-style: none;
     margin-left: 0;
@@ -1278,7 +1283,7 @@ div.custom-search-form {
 }
 
 .dojo-filter-set.form-inline .filter-form-control {
-    width: auto!important;
+    width: 100%!important;
     vertical-align: middle;
 }
 
@@ -1587,24 +1592,25 @@ ul#sortable1 li div.panel-heading:hover, ul#sortable2 li div.panel-heading:hover
     margin-bottom: 10px;
 }
 
-hr.report-page-break {
-    padding: 0;
-    border: none;
-    border-top: thin dashed #333;
-    color: #505050;
+.report-page-break {
+    display: flex;
+    align-items: center;
     text-align: center;
-    font-weight: 500;
-    line-height: 1.1;
-    font-size: 14px;
 }
 
-hr.report-page-break:before {
-    content: "Page Break";
-    display: inline-block;
-    position: relative;
-    top: -10px;
-    padding: 0 0.25em;
-    background: #F5F5F5;
+.report-page-break::before,
+.report-page-break::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px dashed #000;
+}
+
+.report-page-break:not(:empty)::before {
+    margin-right: 0.25em;
+}
+
+.report-page-break:not(:empty)::after {
+    margin-left: 0.25em;
 }
 
 .editor * {
@@ -1831,6 +1837,14 @@ small {
     min-width:200px;
 }
 
+#toggleBox {
+    background-color: transparent!important;
+    border: none!important;
+    font-weight: bold!important;
+    position: absolute!important;
+    left: 0!important;
+}
+
 .EasyMDEContainer .table {
     width: unset!important;
 }
@@ -1848,4 +1862,11 @@ input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
+}
+
+.table th, .table td {
+    border-right: 1px solid #ddd;
+}
+.table th:last-child, .table td:last-child {
+    border-right: none; 
 }

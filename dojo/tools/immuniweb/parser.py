@@ -41,10 +41,7 @@ class ImmuniwebParser:
             cwe = "".join(
                 i for i in vulnerability.find("CWE-ID").text if i.isdigit()
             )
-            if cwe:
-                cwe = cwe
-            else:
-                cwe = None
+            cwe = cwe or None
             vulnerability_id = vulnerability.find("CVE-ID").text
             steps_to_reproduce = vulnerability.find("PoC").text
             # just to make sure severity is in the recognised sentence casing
@@ -58,7 +55,7 @@ class ImmuniwebParser:
             url = vulnerability.find("URL").text
 
             dupe_key = hashlib.md5(
-                str(description + title + severity).encode("utf-8")
+                str(description + title + severity).encode("utf-8"),
             ).hexdigest()
 
             # check if finding is a duplicate
@@ -78,7 +75,7 @@ class ImmuniwebParser:
                     mitigation=mitigation,
                     impact=impact,
                     references=reference,
-                    dynamic_finding=True
+                    dynamic_finding=True,
                 )
                 if vulnerability_id:
                     finding.unsaved_vulnerability_ids = [vulnerability_id]

@@ -247,28 +247,13 @@ function togglePassVisibility() {
     if (passwdInput.type === "password") {
         passwdInput.type = "text";
         toggleBox.innerHTML = "<i class='fa-solid fa-eye-slash'></i>\
-        <span><b>Hide Password</b></span>";
+        <span>Hide Password</span>";
     } else {
         passwdInput.type = "password";
         toggleBox.innerHTML = "<i class='fa-solid fa-eye'></i>\
-        <span><b>Show Password</b></span>";
+        <span>Show Password</span>";
     }
 }
-
-function asciidocDownload() {
-    var content = document.getElementById('base-content')
-    var element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' +
-        encodeURIComponent(content.innerText.slice(16)));
-    element.setAttribute('download', 'asciidoc-report.txt');
-
-    element.style.display = 'none';
-    document.body.appendChild(element);
-
-    element.click();
-
-    document.body.removeChild(element);
-  }
 
 
 // Parse a string that contains HTML to retrieve value from the HTML tag or Attribute, returning only a TEXT version.
@@ -357,8 +342,13 @@ function clear_form(form){
             case 'radio':
                 this.checked = false;
                 break;
-            case 'select-multiple':
-                $(this).val(null).trigger('change');
+                case 'select-multiple':
+                // Clear all types of multiple select versions
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).data('select2').$container.find(".select2-selection__choice").remove(); 
+                }
+                $(this).val(null).trigger('change'); 
+                break;
         }
     });
 }
