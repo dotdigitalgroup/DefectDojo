@@ -1,5 +1,5 @@
 ---
-storageClass: gp3-csi
+storageClass: aws-efs-sc
 
 # Global settings
 # create defectdojo specific secret
@@ -62,7 +62,7 @@ networkPolicy:
 # Set the "enable" field to true of the database type you select (if you want to use internal database) and false of the one you don't select
 database: postgresql
 # Primary hostname of instance
-host: defectdojo.qa.dotgroup.com.br
+host: defectdojo.dotgroup.com.br
 
 # The full URL to your defectdojo instance, depends on the domain where DD is deployed, it also affects links in Jira
 # siteUrl: 'https://<yourdomain>'
@@ -282,9 +282,9 @@ django:
         memory: 256Mi
       limits:
         cpu: 2000m
-        memory: 2Gi
+        memory: 4Gi
     appSettings:
-      processes: 2
+      processes: 8
       threads: 2
       # maxFd: 102400 # Uncomment to set the maximum number of file descriptors. If not set will be detected by uwsgi
     enableDebug: false  # this also requires DD_DEBUG to be set to True
@@ -333,7 +333,8 @@ django:
   # @type: array<map>
   #extraVolumes:
   #  - type: configMap
-  #    name: local_settings
+  #    name: defectdojo-nginx-nginx-confs
+  #    container: nginx
   #    path: /etc/nginx/nginx.conf
   #    subPath: nginx.conf
 
@@ -410,7 +411,7 @@ initializer:
   staticName: false
 
 postgresql:
-  enabled: true
+  enabled: false
   auth:
     username: defectdojo
     password: ""
@@ -458,7 +459,7 @@ postgresql:
 
   # To use an external PostgreSQL instance, set enabled to false and uncomment
   # the line below:
-  # postgresServer: "127.0.0.1"
+  postgresServer: "172.31.10.121"
 mysql:
   enabled: false
   auth:
